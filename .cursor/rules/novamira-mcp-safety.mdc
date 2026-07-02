@@ -1,0 +1,25 @@
+---
+description: Novamira MCP site binding and safety checks for this project
+alwaysApply: true
+---
+
+# Novamira MCP — Breeze Smart Purge staging
+
+## Authorized site
+
+- **Hostname:** `breeze-smart-purge.pixelparade.dev`
+- **MCP server name:** `novamira-breeze-smart-pur`
+- **Config:** `.cursor/mcp.json` in this repo only
+
+## Before every Novamira MCP session
+
+1. Workspace root must be `breeze-smart-purge-plugin`.
+2. Call `mcp-adapter-discover-abilities` on `novamira-breeze-smart-pur`.
+3. Confirm `WP_API_URL` hostname matches `breeze-smart-purge.pixelparade.dev`.
+4. Abort if connected to any other WordPress site.
+
+## Destructive operations
+
+Re-run hostname check before: write-file, edit-file, delete-file, delete-post, execute-php, or mutating run-wp-cli.
+
+This is a **staging** site — production deploys go through GitHub releases + MainWP only.

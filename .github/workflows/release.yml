@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  PLUGIN_SLUG: breeze-smart-purge
+  ZIP_NAME: breeze-smart-purge.zip
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build plugin zip
+        run: |
+          mkdir -p build/${{ env.PLUGIN_SLUG }}
+          rsync -av \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.cursor' \
+            --exclude='build' \
+            --exclude='*.zip' \
+            ./ build/${{ env.PLUGIN_SLUG }}/
+          cd build && zip -r ../${{ env.ZIP_NAME }} ${{ env.PLUGIN_SLUG }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ZIP_NAME }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: MainWP rollout note
+        run: |
+          echo "Release zip uploaded. In MainWP: Plugins → Install → use the release asset URL to update all child sites."

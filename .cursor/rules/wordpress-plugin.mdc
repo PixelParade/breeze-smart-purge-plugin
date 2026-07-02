@@ -1,0 +1,55 @@
+---
+description: WordPress plugin conventions for Breeze Smart Purge
+globs:
+  - "**/*.php"
+alwaysApply: true
+---
+
+# Breeze Smart Purge — WordPress Plugin
+
+## Identity
+
+- **Plugin name:** Breeze Smart Purge
+- **Slug / folder:** `breeze-smart-purge`
+- **Text domain:** `breeze-smart-purge`
+- **Main file:** `breeze-smart-purge.php` (single-file plugin — all logic lives here)
+- **Version:** bump in plugin header only (no separate version constant)
+
+## Architecture
+
+- **Single-file plugin:** `breeze-smart-purge.php` + `readme.txt` only — no `includes/`, no bootstrap class loader
+- **Function prefix:** `bsp_` for all functions, AJAX actions, and hooks
+- **Options prefix:** `bsp_` (e.g. `bsp_settings`, `bsp_scanned_map`, `bsp_manual_map`)
+- **Dependency:** requires active Breeze Cache plugin (`BREEZE_VERSION` defined)
+
+## Coding standards
+
+- Follow WordPress PHP coding standards: tabs for indentation, Yoda conditions where appropriate
+- Prefix functions, hooks, options, and transients with `bsp_`
+- Never hardcode site URLs or credentials — use WordPress APIs (`home_url()`, options, etc.)
+- Prefer WordPress hooks and options over custom tables
+- Admin UI is inline in `bsp_render_settings_page()` — keep AJAX handlers as `bsp_ajax_*` at file bottom
+
+## Environments
+
+- **Staging:** `breeze-smart-purge.pixelparade.dev` via Novamira MCP (`novamira-breeze-smart-pur` in project `.cursor/mcp.json` only — never global)
+- **Production:** deploy via GitHub release tags + MainWP bulk update
+
+See `.cursor/rules/novamira-mcp-safety.mdc` for mandatory site-binding checks before any MCP call.
+
+## Secrets
+
+- Never commit API keys, SSH keys, application passwords, or `.env` files
+- GitHub Actions secrets: `STAGING_SSH_HOST`, `STAGING_SSH_USER`, `STAGING_SSH_KEY`
+
+## Dev workflow
+
+1. Edit `breeze-smart-purge.php` locally (source of truth)
+2. Push to `main` → GitHub Actions deploys to staging
+3. Test on staging via Novamira MCP (`list-directory`, `read-file`, `run-wp-cli`)
+4. Tag `v*` release → GitHub Release zip → MainWP rollout to client sites
+
+## Site access
+
+- **Novamira MCP** — WordPress-aware reads/writes (project `.cursor/mcp.json` only). See [docs/ACCESS.md](docs/ACCESS.md).
+- **SSH** — bulk pull/deploy via `.env.deploy.local` + `scripts/pull-from-staging.ps1` or GitHub Actions.

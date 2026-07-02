@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "novamira-breeze-smart-pur": {
+      "command": "npx",
+      "args": ["-y", "@automattic/mcp-wordpress-remote@latest"],
+      "env": {
+        "WP_API_URL": "https://breeze-smart-purge.pixelparade.dev/wp-json/mcp/novamira",
+        "WP_API_USERNAME": "your-email@example.com",
+        "WP_API_PASSWORD": "your-application-password"
+      }
+    }
+  }
+}

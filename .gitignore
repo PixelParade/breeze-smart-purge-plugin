@@ -1,0 +1,11 @@
+/vendor/
+/node_modules/
+*.zip
+.env
+.env.deploy.local
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+.cursor/mcp.json
