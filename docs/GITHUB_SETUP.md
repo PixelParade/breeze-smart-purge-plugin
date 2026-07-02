@@ -14,6 +14,26 @@ git remote add personal https://github.com/Kevin-LeMasters-PixelParade/Breeze-Sm
 git fetch --all
 ```
 
+## Connection status (check anytime)
+
+```powershell
+gh auth status
+gh api user/orgs -q ".[].login"                    # expect: PixelParade
+gh repo view PixelParade/breeze-smart-purge-plugin # expect: repo metadata
+gh secret list -R PixelParade/breeze-smart-purge-plugin
+```
+
+If org commands return **404** or empty orgs, your PAT is not authorized for **PixelParade**. Fix:
+
+1. [Fine-grained tokens](https://github.com/settings/tokens?type=beta) → edit token
+2. **Resource owner:** `PixelParade` (or authorize org on user-owned token)
+3. **Repository access:** `breeze-smart-purge-plugin` or all org repos
+4. **Permissions:** Contents, Metadata, Actions, Administration (for invites/secrets)
+5. [Org approve](https://github.com/organizations/PixelParade/settings/personal-access-tokens)
+6. `gh auth login --with-token` → update `GITHUB_PERSONAL_ACCESS_TOKEN` → restart Cursor
+
+`git push` may work before `gh`/MCP do — they use different credentials until PAT is fixed.
+
 ## GitHub MCP + `gh`
 
 Set Windows user env var `GITHUB_PERSONAL_ACCESS_TOKEN` with a fine-grained PAT that has **PixelParade** org access. Restart Cursor after updating.
