@@ -1,52 +1,33 @@
-=== Breeze Smart Purge ===
-Contributors: PixelParade LLC
-Tags: cache, purge, breeze, cloudflare, performance
-Requires at least: 6.0
-Tested up to: 6.4
-Stable tag: 1.0.0
-Requires PHP: 7.4
-License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+# Breeze Smart Purge
 
-Intelligently purges CPT Archives, Taxonomies, and Custom Page Builder Hubs via Breeze and Cloudflare.
+Intelligently purges CPT archives, taxonomies, and page-builder hub pages via Breeze and Cloudflare.
 
-== Description ==
+**Org repo:** [PixelParade/breeze-smart-purge-plugin](https://github.com/PixelParade/breeze-smart-purge-plugin)  
+**License:** GPLv2 or later (see [LICENSE](LICENSE))
 
-By default, Breeze aggressively caches content. When you update a custom post type, it only clears the cache for that specific post. This leaves your important hub pages—like post grids, custom taxonomy archives, and page builder layouts—serving stale content to users.
+Developed in Cursor, deployed to Cloudways staging, rolled out to client sites via MainWP.
 
-**Breeze Smart Purge** acts as a traffic controller for your cache. The built-in Auto-Scanner detects which pages are querying specific Post Types, ensuring Breeze safely clears the cache for the parent pages and associated taxonomies whenever a post is updated.
+## For contributors (Kevin, Josh)
 
-### Key Features
-* **Smart Auto-Scanner:** Automatically detects Gutenberg, Elementor, Bricks, and Beaver Builder post grids to map custom post types to their respective hub pages.
-* **Manual Overrides:** Easily define custom URL paths that should be purged when a specific post type is updated.
-* **Synchronous Cloudflare Purging:** Optionally bypass the default WP-Cron delay so cache purges happen instantly on "Update".
-* **Automated Taxonomy Purging:** Automatically detects and purges associated taxonomy archive URLs when a post is modified.
+```
+breeze-smart-purge-plugin/
+├── breeze-smart-purge.php     # Single-file plugin (bsp_ prefix)
+├── readme.txt                 # WordPress.org-style readme
+├── .cursor/                   # Novamira MCP + rules (mcp.json gitignored)
+├── .github/workflows/         # Staging deploy + release zip
+├── docs/                      # Access, GitHub setup
+└── scripts/                   # Pull from staging helpers
+```
 
-== Installation ==
+1. Clone and open in Cursor
+2. Copy `.cursor/mcp.json.example` → `.cursor/mcp.json` for staging MCP
+3. Edit `breeze-smart-purge.php`, commit, push to `main`
+4. See [docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md) for Actions secrets and collaborators
 
-1. Upload the entire `breeze-smart-purge` folder to the `/wp-content/plugins/` directory, or install the plugin through the WordPress plugins screen directly via a zip file.
-2. Activate the plugin through the 'Plugins' screen in WordPress.
-3. Navigate to **Settings > Breeze Smart Purge** to run your first Smart Scan and configure your mappings.
+## Community
 
-== Frequently Asked Questions ==
+Plugin description, FAQ, and changelog for end users are in [readme.txt](readme.txt).
 
-= Does this replace the Breeze cache plugin? =
-No, this is an add-on utility. You must have the Breeze plugin installed and active for this to work.
+When ready to share publicly: make the org repo public and/or submit to the WordPress plugin directory.
 
-= Which page builders does the Auto-Scanner detect? =
-Currently, the Auto-Scanner officially supports native Gutenberg blocks, Elementor, Bricks Builder, and Beaver Builder. If you use a different builder, you can map your URLs manually in the settings.
-
-== Downloads ==
-![GitHub Downloads](https://img.shields.io/github/downloads/Kevin-LeMasters-PixelParade/breeze-smart-purge/total?style=flat-square&color=2271b1)
-
-== Support ==
-Please note: This is a free, internal agency tool provided 'as-is'. We are sharing it to be helpful, but we do not provide active tech support, troubleshooting, or guaranteed updates.
-
-== Changelog ==
-
-= 1.0.0 =
-* Initial release.
-* Security Patch: Added `wp_unslash()` to form submission handlers.
-* Fix: Replaced standard `parse_url` with `wp_parse_url` for strict environment consistency.
-* Fix: Added missing text domains for i18n translation compatibility.
-* Enhancement: Added clean uninstall logic to prevent database bloat upon plugin deletion.
+![GitHub Downloads](https://img.shields.io/github/downloads/PixelParade/breeze-smart-purge-plugin/total?style=flat-square&color=2271b1)
