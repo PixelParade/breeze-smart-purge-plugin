@@ -26,17 +26,27 @@ gh repo view PixelParade/breeze-smart-purge-plugin
 
 ## Collaborators
 
-**PixelParade → People → Invite member** — add Josh (Member or Maintainer).
+**Invite Josh:** [PixelParade → People → Invite member](https://github.com/orgs/PixelParade/people) → `swsjoshua` (Member or Maintainer).
+
+Org API invite requires a PAT with **admin:org**; use the GitHub UI if `gh` returns 403.
 
 ## GitHub Actions secrets
 
-**PixelParade/breeze-smart-purge-plugin → Settings → Secrets → Actions**
+Run (after PAT has PixelParade org access):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup-github-secrets.ps1
+```
+
+Or set manually on **PixelParade/breeze-smart-purge-plugin → Settings → Secrets → Actions**:
 
 | Secret | Value |
 |--------|-------|
 | `STAGING_SSH_HOST` | `45.76.227.59` |
 | `STAGING_SSH_USER` | `cursor-user` |
-| `STAGING_SSH_KEY` | Deploy key private PEM |
+| `STAGING_SSH_KEY` | Contents of `%USERPROFILE%\.ssh\breeze-smart-purge-deploy` (private key) |
+
+**Cloudways:** add the matching **public** key from `%USERPROFILE%\.ssh\breeze-smart-purge-deploy.pub` to the staging server SSH keys (Server → SSH/SFTP → Public Keys).
 
 `STAGING_APP_ID=tyaxssmjcp` is in `.github/workflows/deploy-staging.yml`.
 
