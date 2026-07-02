@@ -21,8 +21,9 @@ breeze-smart-purge-plugin/
 
 1. Clone and open in Cursor
 2. Copy `.cursor/mcp.json.example` → `.cursor/mcp.json` for staging MCP
-3. Edit `breeze-smart-purge.php`, commit, push to `main`
-4. See [docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md) for Actions secrets and collaborators
+3. Edit `breeze-smart-purge.php`, commit, push to `main` (staging auto-deploys via GitHub Actions)
+4. Tag `v*` when ready for release zip + WP Updates / MainWP rollout
+5. See [docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md) for Actions secrets, releases, and `BSP_GITHUB_TOKEN`
 
 ## Community
 

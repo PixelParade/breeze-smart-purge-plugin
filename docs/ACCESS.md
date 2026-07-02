@@ -40,6 +40,23 @@ For automated deploy, use an SSH **key**, not the cursor-user password:
 
 Set `STAGING_APP_ID=tyaxssmjcp` in `.github/workflows/deploy-staging.yml`.
 
+## WordPress plugin updates (GitHub Releases)
+
+The plugin checks GitHub Releases for newer versions and surfaces **Dashboard → Plugins → Update available**.
+
+| Site | Primary update path |
+|------|---------------------|
+| Staging | Push to `main` (CI rsync) for dev; tag releases to test WP update UI |
+| Client sites | Tag `v*` → MainWP or native WP Updates |
+
+While the org repo is **private**, add to `wp-config.php` on each site:
+
+```php
+define( 'BSP_GITHUB_TOKEN', 'your-read-only-github-pat' );
+```
+
+Template: [wp-config-github-updates.example.php](wp-config-github-updates.example.php). Full checklist: [GITHUB_SETUP.md](GITHUB_SETUP.md).
+
 ## Security
 
 - Novamira app passwords and SSH passwords stay in **gitignored** local files only.

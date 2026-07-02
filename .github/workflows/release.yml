@@ -25,12 +25,18 @@ jobs:
             --exclude='.git' \
             --exclude='.github' \
             --exclude='.cursor' \
+            --exclude='.env.deploy.local' \
+            --exclude='docs' \
+            --exclude='scripts' \
+            --exclude='README.md' \
+            --exclude='LICENSE' \
             --exclude='build' \
             --exclude='*.zip' \
             ./ build/${{ env.PLUGIN_SLUG }}/
           cd build && zip -r ../${{ env.ZIP_NAME }} ${{ env.PLUGIN_SLUG }}
 
       - name: Create GitHub Release
+        id: gh_release
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ env.ZIP_NAME }}
@@ -38,6 +44,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: MainWP rollout note
+      - name: Release summary
         run: |
-          echo "Release zip uploaded. In MainWP: Plugins → Install → use the release asset URL to update all child sites."
+          echo "Release asset: breeze-smart-purge.zip (folder ${{ env.PLUGIN_SLUG }}/ inside zip)"
+          echo "WordPress: Dashboard → Plugins → Update (needs BSP_GITHUB_TOKEN while repo is private)"
+          echo "MainWP: install/update from the GitHub release asset URL"
+          echo "Release URL: ${{ steps.gh_release.outputs.url }}"

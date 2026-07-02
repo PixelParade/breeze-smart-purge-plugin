@@ -32,4 +32,8 @@ gh secret set STAGING_SSH_HOST --repo $repo --body $env:STAGING_SSH_HOST
 gh secret set STAGING_SSH_USER --repo $repo --body $env:STAGING_SSH_USER
 gh secret set STAGING_SSH_KEY --repo $repo --body $privateKey
 
-Write-Host "Done. Verify: gh secret list -R $repo"
+Write-Host "Done. Verify:"
+gh secret list -R $repo
+Write-Host ""
+Write-Host "Next: push to main, then:"
+Write-Host "  gh run list -R $repo --workflow deploy-staging.yml"

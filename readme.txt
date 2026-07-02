@@ -3,7 +3,7 @@ Contributors: pixelparade
 Tags: cache, purge, breeze, cloudflare, performance
 Requires at least: 6.0
 Tested up to: 6.4
-Stable tag: 1.0.0
+Stable tag: 1.0.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -12,7 +12,7 @@ Intelligently purges CPT Archives, Taxonomies, and Custom Page Builder Hubs via 
 
 == Description ==
 
-By default, Breeze aggressively caches content. When you update a custom post type, it only clears the cache for that specific post. This leaves your important hub pagesólike post grids, custom taxonomy archives, and page builder layoutsóserving stale content to users.
+By default, Breeze aggressively caches content. When you update a custom post type, it only clears the cache for that specific post. This leaves your important hub pagesùlike post grids, custom taxonomy archives, and page builder layoutsùserving stale content to users.
 
 **Breeze Smart Purge** acts as a traffic controller for your cache. The built-in Auto-Scanner detects which pages are querying specific Post Types, ensuring Breeze safely clears the cache for the parent pages and associated taxonomies whenever a post is updated.
 
@@ -37,6 +37,14 @@ No, this is an add-on utility. You must have the Breeze plugin installed and act
 Currently, the Auto-Scanner officially supports native Gutenberg blocks, Elementor, Bricks Builder, and Beaver Builder. If you use a different builder, you can map your URLs manually in the settings.
 
 == Changelog ==
+
+= 1.0.2 =
+* Add GitHub Releases update checker (Dashboard ? Plugins ? Update available).
+* Authenticated download support for private org repo via BSP_GITHUB_TOKEN in wp-config.php.
+
+= 1.0.1 =
+* Add Breeze admin bar on the frontend with per-page clear cache.
+* Add Smart Purge Settings link to the Breeze toolbar in wp-admin.
 
 = 1.0.0 =
 * Initial release.
