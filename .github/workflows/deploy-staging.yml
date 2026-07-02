@@ -7,8 +7,9 @@ on:
 
 env:
   PLUGIN_SLUG: breeze-smart-purge
-  # Cloudways application ID (dashboard → application → tyaxssmjcp)
   STAGING_APP_ID: tyaxssmjcp
+  # Application SSH user (cursor-user) — relative to its home directory
+  STAGING_REMOTE_PLUGIN_PATH: public_html/wp-content/plugins/breeze-smart-purge
 
 jobs:
   deploy:
@@ -17,19 +18,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Rsync to Cloudways staging
-        uses: burnett01/rsync-deployments@7.0.1
+      - name: Deploy plugin files to Cloudways staging
+        uses: appleboy/scp-action@v0.1.7
         with:
-          switches: -avzr --delete --exclude=.git --exclude=.github --exclude=.cursor --exclude=.env.deploy.local --exclude=docs --exclude=scripts --exclude=README.md --exclude=LICENSE
-          path: ./
-          # Cloudways master path; equivalent to .../1305358.cloudwaysapps.com/tyaxssmjcp/...
-          remote_path: /home/master/applications/${{ env.STAGING_APP_ID }}/public_html/wp-content/plugins/${{ env.PLUGIN_SLUG }}/
-          remote_host: ${{ secrets.STAGING_SSH_HOST }}
-          remote_user: ${{ secrets.STAGING_SSH_USER }}
-          remote_key: ${{ secrets.STAGING_SSH_KEY }}
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          password: ${{ secrets.STAGING_SSH_PASSWORD }}
+          port: 22
+          source: "breeze-smart-purge.php,readme.txt"
+          target: ${{ env.STAGING_REMOTE_PLUGIN_PATH }}/
+          overwrite: true
 
       - name: Deploy summary
         run: |
           echo "Deployed branch ${{ github.ref_name }} commit ${{ github.sha }} to staging."
-          echo "Plugin path: wp-content/plugins/${{ env.PLUGIN_SLUG }}/"
-          echo "Staging updates from main automatically; use GitHub Releases + WP Updates for versioned rollouts."
+          echo "Plugin path: ${{ env.STAGING_REMOTE_PLUGIN_PATH }}/"
+          echo "Staging tracks main on push. Use GitHub Releases for versioned WP Updates."

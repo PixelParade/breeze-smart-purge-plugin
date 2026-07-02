@@ -31,6 +31,12 @@ Write-Host "Setting GitHub Actions secrets on $repo ..."
 gh secret set STAGING_SSH_HOST --repo $repo --body $env:STAGING_SSH_HOST
 gh secret set STAGING_SSH_USER --repo $repo --body $env:STAGING_SSH_USER
 gh secret set STAGING_SSH_KEY --repo $repo --body $privateKey
+if ($env:STAGING_SSH_PASSWORD) {
+    gh secret set STAGING_SSH_PASSWORD --repo $repo --body $env:STAGING_SSH_PASSWORD
+    Write-Host "Set STAGING_SSH_PASSWORD (used by deploy workflow)."
+} else {
+    Write-Warning "STAGING_SSH_PASSWORD not set in .env.deploy.local - add it for CI deploy."
+}
 
 Write-Host "Done. Verify:"
 gh secret list -R $repo
