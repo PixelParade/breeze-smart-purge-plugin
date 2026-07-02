@@ -657,3 +657,4 @@ function bsp_plugin_uninstall() {
     delete_option('bsp_needs_initial_scan');
     delete_transient('bsp_scan_summary_notice');
 }
+
