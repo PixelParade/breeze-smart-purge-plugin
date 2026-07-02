@@ -1,8 +1,10 @@
 # Breeze Smart Purge
 
-WordPress plugin for intelligent Breeze cache purging. Developed in Cursor, versioned on GitHub, deployed to Cloudways staging and rolled out to client sites via MainWP.
+WordPress plugin for intelligent Breeze cache purging. Developed in Cursor, versioned on GitHub under **PixelParade**, deployed to Cloudways staging and rolled out to client sites via MainWP.
 
-**Status:** Plugin source pulled from staging (`breeze-smart-purge.pixelparade.dev`) — local repo matches live plugin.
+**Repo:** [PixelParade/breeze-smart-purge-plugin](https://github.com/PixelParade/breeze-smart-purge-plugin)
+
+**Status:** Plugin source matches staging (`breeze-smart-purge.pixelparade.dev`).
 
 ## Project structure
 
@@ -24,8 +26,8 @@ breeze-smart-purge-plugin/
 
 1. Open this folder in Cursor (`C:\Users\kevin\Projects\breeze-smart-purge-plugin`)
 2. Novamira MCP is configured in `.cursor/mcp.json` for staging — reload MCP in **Settings → MCP** if needed
-3. Edit `breeze-smart-purge.php`, commit, push to `main`
-4. Follow [docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md) to create the GitHub repo and push (if not done yet)
+3. Edit `breeze-smart-purge.php`, commit, push to `main` on [PixelParade/breeze-smart-purge-plugin](https://github.com/PixelParade/breeze-smart-purge-plugin)
+4. Follow [docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md) for MCP, collaborators, and Actions secrets
 
 ## Dev workflow
 

@@ -1,97 +1,50 @@
 # GitHub setup
 
-## 1. Git + GitHub CLI (installed)
+**Canonical repo:** [PixelParade/breeze-smart-purge-plugin](https://github.com/PixelParade/breeze-smart-purge-plugin) (private org repo — make public when ready for community)
 
-Git and `gh` are installed via winget. Open a **new** terminal so PATH picks them up, then verify:
+**Legacy personal repo:** [Kevin-LeMasters-PixelParade/Breeze-Smart-Purge](https://github.com/Kevin-LeMasters-PixelParade/Breeze-Smart-Purge) — archive after consolidation.
 
-```powershell
-git --version
-gh --version
-```
+Local folder: `C:\Users\kevin\Projects\breeze-smart-purge-plugin`
 
-## 2. Authenticate with GitHub
+## Remotes
 
 ```powershell
-gh auth login
+git remote set-url origin https://github.com/PixelParade/breeze-smart-purge-plugin.git
+git remote add personal https://github.com/Kevin-LeMasters-PixelParade/Breeze-Smart-Purge.git  # optional, for reference
+git fetch --all
 ```
 
-Choose: **GitHub.com** → **HTTPS** → **Login with a web browser** (or paste a token).
+## GitHub MCP + `gh`
 
-Verify:
+Set Windows user env var `GITHUB_PERSONAL_ACCESS_TOKEN` with a fine-grained PAT that has **PixelParade** org access. Restart Cursor after updating.
 
 ```powershell
-gh auth status
+gh auth login --with-token   # paste token, Enter, Ctrl+Z
+gh api user/orgs -q ".[].login"
+gh repo view PixelParade/breeze-smart-purge-plugin
 ```
 
-## 3. GitHub MCP (global Cursor)
+## Collaborators
 
-Added to `~/.cursor/mcp.json` (remote official server). Set a **fine-scoped PAT** as a Windows user environment variable:
+**PixelParade → People → Invite member** — add Josh (Member or Maintainer).
 
-1. Create a token: [github.com/settings/tokens](https://github.com/settings/tokens)  
-   Scopes: `repo`, `read:org` (and `workflow` if you want Actions visibility from chat).
-2. **Windows → Environment Variables → User → New:**
-   - Name: `GITHUB_PERSONAL_ACCESS_TOKEN`
-   - Value: your `github_pat_...` or `ghp_...` token
-3. **Restart Cursor** completely.
-4. **Settings → MCP** — confirm `github` shows a green dot.
-5. Test in chat: *"List my GitHub repositories"*
+## GitHub Actions secrets
 
-> MCP uses the PAT for GitHub API access from chat. `gh auth login` handles git push separately — both can use the same token if you prefer.
-
-## 4. Initialize repo (done locally)
-
-If starting fresh on another machine:
-
-```powershell
-cd C:\Users\kevin\Projects\breeze-smart-purge-plugin
-git init -b main
-git add .
-git commit -m "Import Breeze Smart Purge plugin from staging."
-```
-
-## 5. Create GitHub repo and push
-
-**Option A — GitHub CLI** (after `gh auth login`):
-
-```powershell
-gh repo create pixelparade/breeze-smart-purge-plugin --private --source=. --remote=origin --push
-```
-
-If the org repo name differs, adjust `pixelparade/breeze-smart-purge-plugin`.
-
-**Option B — GitHub website**
-
-1. Create a new **private** repo: `pixelparade/breeze-smart-purge-plugin`
-2. Do not initialize with README (this repo already has one)
-3. Push:
-
-```powershell
-git remote add origin https://github.com/pixelparade/breeze-smart-purge-plugin.git
-git push -u origin main
-```
-
-## 6. GitHub Actions secrets
-
-In the repo: **Settings → Secrets and variables → Actions → New repository secret**
+**PixelParade/breeze-smart-purge-plugin → Settings → Secrets → Actions**
 
 | Secret | Value |
 |--------|-------|
 | `STAGING_SSH_HOST` | `45.76.227.59` |
-| `STAGING_SSH_USER` | `cursor-user` (or deploy user) |
-| `STAGING_SSH_KEY` | Full private key PEM (deploy key — not your GitHub login key) |
+| `STAGING_SSH_USER` | `cursor-user` |
+| `STAGING_SSH_KEY` | Deploy key private PEM |
 
-Generate a deploy key for CI:
+`STAGING_APP_ID=tyaxssmjcp` is in `.github/workflows/deploy-staging.yml`.
 
-```powershell
-ssh-keygen -t ed25519 -C "breeze-smart-purge-deploy" -f "$env:USERPROFILE\.ssh\breeze-smart-purge-deploy"
-```
+## Deploy
 
-Add the `.pub` file to Cloudways SSH keys; paste the private key into `STAGING_SSH_KEY`.
+- Push to `main` → staging deploy
+- Tag `v*` → release zip for MainWP / community
 
-## 7. Deploy path
+## Make public (when ready)
 
-`STAGING_APP_ID` is set to `tyaxssmjcp` in `.github/workflows/deploy-staging.yml`. Confirm the `remote_path` matches your Cloudways app layout.
-
-## 8. First deploy
-
-Push to `main` triggers staging deploy. Verify with Novamira MCP (`plugin list`) or **Settings → Breeze Smart Purge** on staging.
+Repo **Settings → Danger zone → Change visibility → Public**.
