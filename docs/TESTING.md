@@ -1,6 +1,8 @@
 # Testing strategy — Smart Purge for Breeze Cache
 
-Three layers: **automated unit tests** (every push), **staging integration** (Bricks + simulated builders), and **production-adjacent BB smoke** (`pixelparade.co`). MainWP Regression Testing is optional post-release monitoring, not a substitute for the first two.
+Three layers: **automated unit tests** (every push), **staging integration** (primary QA — all builder + purge testing), and **optional** post-rollout smoke on live client sites. MainWP Regression Testing is optional fleet monitoring, not a substitute for the first two.
+
+**pixelparade.co is a live client site**, not the pre-release test environment. Test on staging before every `v*` tag; only spot-check pixelparade.co after rollout if you want production confirmation.
 
 ## Layer 1 — PHPUnit (CI, no WordPress)
 
@@ -31,15 +33,23 @@ CI job `phpunit` in `.github/workflows/plugin-check.yml` runs on every push to `
 
 Staging deploys the **agency** build from `main` on every push. Site stack: **Bricks**, **Breeze**, **Elementor**, **Beaver Builder Lite** (wp.org plugins for real scanner QA), ACF, ASE, etc.
 
-### Builder plugins on staging
+### Builder coverage on staging
 
-Elementor and Beaver Builder Lite are installed from wordpress.org on the staging site only — they do not ship to client sites. Use them to test **real** `_elementor_data` / `_fl_builder_data` detection (not just simulated meta fixtures).
+Staging uses the **Bricks child theme** — do not install the **Divi theme** (hard conflict). Multiple builder **plugins** can coexist for QA; each fixture page uses one builder pattern.
 
-| Builder | Staging | Client BB smoke |
-|---------|---------|-----------------|
-| Bricks | Native (theme) | N/A |
-| Elementor | wp.org plugin | Optional |
-| Beaver Builder | BB Lite (wp.org) | **pixelparade.co** (full BB) |
+| Builder | Staging approach | Plugin install? | Conflict risk |
+|---------|------------------|-----------------|---------------|
+| **Gutenberg** | Real Query Loop fixture | Core | None |
+| **Bricks** | Real Posts element (`bsp-test-bricks-hub`) | Theme | None |
+| **Elementor** | Real plugin + simulated meta fixture | wp.org — **installed** | Low (already active) |
+| **Beaver Builder** | BB Lite + simulated meta fixture | wp.org — **installed** | Low |
+| **Oxygen** | Simulated `ct_builder_json` meta | Paid — **not installed** | N/A |
+| **WPBakery** | Shortcode fixture in `post_content` | Paid — **not on wp.org** | Plugin-only OK if you upload a license zip later |
+| **Divi** | Shortcode fixture in `post_content` | Paid — **no Divi theme** | Divi **theme** conflicts with Bricks; Divi Builder plugin-only is OK if licensed |
+
+**Do not install:** Divi theme, extra caching plugins, or duplicate page-builder stacks you do not need.
+
+**Optional later:** If PixelParade has WPBakery or Divi Builder plugin zips (not the Divi theme), upload to staging via **Plugins → Add New → Upload** to test real editor saves — fixtures already cover scanner detection via shortcode/meta patterns.
 
 ### Seed fixtures
 
@@ -56,15 +66,19 @@ The script is idempotent. It creates:
 | CPT `bsp_test_project` | Archive + hub mapping target |
 | 3 sample CPT posts | Purge-on-save targets |
 | `bsp-test-gutenberg-hub` | Real Gutenberg Query Loop |
-| `bsp-test-beaver-hub` | Simulated `_fl_builder_data` (no BB plugin needed) |
+| `bsp-test-beaver-hub` | Simulated `_fl_builder_data` |
 | `bsp-test-elementor-hub` | Simulated `_elementor_data` |
+| `bsp-test-bricks-hub` | Real Bricks Posts grid |
+| `bsp-test-oxygen-hub` | Simulated `ct_builder_json` |
+| `bsp-test-wpbakery-hub` | WPBakery-style `[vc_basic_grid post_type="…"]` shortcode |
+| `bsp-test-divi-hub` | Divi-style `[et_pb_blog post_type="…"]` shortcode |
 | Blog page (`page_for_posts`) | Standard post hub |
 
 Then runs **Run Auto-Scanner** logic and prints `bsp_scanned_map`.
 
 ### Manual staging checklist (before tagging `v*`)
 
-1. **Settings → Smart Purge** — confirm scanned map lists `/bsp-test-gutenberg-hub/`, `/bsp-test-beaver-hub/`, `/bsp-test-elementor-hub/` for `bsp_test_project`.
+1. **Settings → Smart Purge** — confirm scanned map lists all `bsp-test-*-hub` paths for `bsp_test_project` (Gutenberg, Bricks, Elementor, Beaver, Oxygen, WPBakery, Divi).
 2. Edit a `bsp_test_project` post → save → confirm Breeze purges hub URLs (Breeze debug log or cache headers).
 3. **Admin bar** — frontend toolbar purge links work when logged in as editor/admin.
 4. **Plugin Check** — CI already runs wp.org tree; spot-check staging with Plugin Check if you changed admin UI.
@@ -78,19 +92,23 @@ Then runs **Run Auto-Scanner** logic and prints `bsp_scanned_map`.
 | Beaver (simulated meta) | https://breeze-smart-purge.pixelparade.dev/bsp-test-beaver-hub/ |
 | Elementor (simulated meta) | https://breeze-smart-purge.pixelparade.dev/bsp-test-elementor-hub/ |
 | Bricks (real builder) | https://breeze-smart-purge.pixelparade.dev/bsp-test-bricks-hub/ |
+| Oxygen (simulated meta) | https://breeze-smart-purge.pixelparade.dev/bsp-test-oxygen-hub/ |
+| WPBakery (shortcode fixture) | https://breeze-smart-purge.pixelparade.dev/bsp-test-wpbakery-hub/ |
+| Divi (shortcode fixture) | https://breeze-smart-purge.pixelparade.dev/bsp-test-divi-hub/ |
 
 Persistent CPT registration: `wp-content/novamira-sandbox/bsp-test-cpt.php` on staging.
 
-## Layer 3 — Beaver Builder (`pixelparade.co`)
+## Optional — live site smoke (after rollout, not before tag)
 
-Staging does **not** run Beaver Builder. Use **pixelparade.co** (low traffic, already on MainWP) for real BB integration:
+**pixelparade.co** (and other client sites) are for confirming a **production install** looks healthy — not for feature QA before release.
 
-1. Ensure Smart Purge agency build is active.
-2. Create or use a page with a **BB Posts** module targeting a real CPT (or `post`).
-3. Run Auto-Scanner on the site; confirm Beaver Builder detection in scan log.
-4. Publish/edit a child post → verify hub page cache is cleared.
+After a fleet or single-site update, a quick check is enough:
 
-Record the test page URL in MainWP site notes for repeatability.
+1. No duplicate-folder admin notice
+2. **Settings → Smart Purge** loads; scanned map looks sane
+3. One edit → save → hub cache clears
+
+Do **not** use pixelparade.co as a substitute for the staging checklist before tagging.
 
 ## Release gate (before `v*` tag)
 
@@ -100,9 +118,9 @@ Record the test page URL in MainWP site notes for repeatability.
 | Plugin Check | CI `plugin-check` job |
 | Zip smoke | CI `build-zips` job |
 | Staging fixtures | `wp eval-file …/seed-staging-test-fixtures.php` |
-| Staging manual | Checklist above |
-| BB smoke (periodic) | pixelparade.co hub + purge |
-| Tag + release | `git tag vX.Y.Z && git push origin vX.Y.Z` | CI verifies zips (no backslash paths) |
+| Staging manual | Checklist above (required before every `v*` tag) |
+| Tag + release | `git tag vX.Y.Z && git push origin vX.Y.Z` | CI verifies zips |
+| Live smoke (optional) | pixelparade.co or one client site after update | Not a pre-tag gate |
 | Fleet audit (after slug migration) | `wp plugin list` + `ls wp-content/plugins/` on sample sites | Exactly one `smart-purge-for-breeze-cache` folder |
 
 ## MainWP Regression Testing — worth it?
@@ -119,7 +137,7 @@ The extension compares **rendered HTML** (structure, meta, inline JS/CSS), not c
 
 **Recommended setup for PixelParade**
 
-1. Add **pixelparade.co** BB test hub + homepage to Regression Testing targets.
+1. Add homepage + one hub page on **staging fixture URLs** (or a key client URL post-rollout) to Regression Testing targets.
 2. Enable **auto-scan after plugin updates** with a 5–10 minute delay (let Breeze warm).
 3. Keep PHPUnit + staging as the **merge gate**; use Regression Testing as **post-rollout** monitoring across the ~33-site fleet.
 

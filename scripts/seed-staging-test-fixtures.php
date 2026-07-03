@@ -189,6 +189,44 @@ update_post_meta(
 	)
 );
 
+// Simulated Oxygen hub (ct_builder_json meta).
+$oxygen_id = bsp_seed_upsert_page(
+	'bsp-test-oxygen-hub',
+	array(
+		'post_title'   => 'BSP Test — Oxygen Hub (simulated)',
+		'post_content' => '<p>Scanner fixture: Oxygen JSON meta.</p>',
+	)
+);
+update_post_meta(
+	$oxygen_id,
+	'ct_builder_json',
+	wp_json_encode(
+		array(
+			'query' => array(
+				'post_type' => $cpt,
+			),
+		)
+	)
+);
+
+// WPBakery shortcode hub (plugin not required — post_content shortcode pattern).
+$wpbakery_id = bsp_seed_upsert_page(
+	'bsp-test-wpbakery-hub',
+	array(
+		'post_title'   => 'BSP Test — WPBakery Hub (shortcode fixture)',
+		'post_content' => '[vc_basic_grid post_type="' . $cpt . '" max_items="6" item="basicGrid_Item"]',
+	)
+);
+
+// Divi shortcode hub (plugin not required — post_content shortcode pattern).
+$divi_id = bsp_seed_upsert_page(
+	'bsp-test-divi-hub',
+	array(
+		'post_title'   => 'BSP Test — Divi Hub (shortcode fixture)',
+		'post_content' => '[et_pb_blog post_type="' . $cpt . '" posts_number="6" show_thumbnail="on"]',
+	)
+);
+
 // Blog posts index helper (standard post type hub).
 $blog_id = (int) get_option('page_for_posts');
 if (!$blog_id) {
@@ -213,6 +251,9 @@ $summary = array(
 		'gutenberg' => get_permalink($gutenberg_id),
 		'beaver'    => get_permalink($beaver_id),
 		'elementor' => get_permalink($elementor_id),
+		'oxygen'    => get_permalink($oxygen_id),
+		'wpbakery'  => get_permalink($wpbakery_id),
+		'divi'      => get_permalink($divi_id),
 		'blog'      => $blog_id ? get_permalink($blog_id) : '',
 	),
 	'scanned_map_cpt'  => isset($map[ $cpt ]) ? $map[ $cpt ] : array(),

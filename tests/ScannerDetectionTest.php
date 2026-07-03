@@ -82,6 +82,30 @@ class ScannerDetectionTest extends TestCase {
 		$this->assertContains('Oxygen', $found);
 	}
 
+	public function test_detects_wpbakery_shortcode_grid() {
+		$found = bsp_detect_post_type_hub_builders(
+			array(
+				'post_type' => 'bsp_test_project',
+				'content'   => '[vc_basic_grid post_type="bsp_test_project" max_items="6"]',
+			)
+		);
+
+		$this->assertContains('WPBakery', $found);
+		$this->assertNotContains('Gutenberg/Shortcode', $found);
+	}
+
+	public function test_detects_divi_shortcode_grid() {
+		$found = bsp_detect_post_type_hub_builders(
+			array(
+				'post_type' => 'bsp_test_project',
+				'content'   => '[et_pb_blog post_type="bsp_test_project" posts_number="6"]',
+			)
+		);
+
+		$this->assertContains('Divi', $found);
+		$this->assertNotContains('Gutenberg/Shortcode', $found);
+	}
+
 	public function test_returns_empty_when_no_match() {
 		$found = bsp_detect_post_type_hub_builders(
 			array(

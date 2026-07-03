@@ -25,7 +25,23 @@ Hostname must be `breeze-smart-purge.pixelparade.dev` before any staging operati
 | Pull plugin folder locally | `scripts/pull-from-staging.ps1` |
 | Emergency hotfix to staging | `scp` / `pscp` to plugin path |
 | GitHub Actions deploy | secrets below |
-| WP-CLI on server | `wp plugin list` |
+| WP-CLI on server | `wp plugin list` (SSH) or Novamira `run-wp-cli` (see below) |
+
+### Staging WP-CLI (Cloudways)
+
+**SSH (recommended):** WP-CLI is available in the application SSH shell — no PHP changes needed.
+
+```bash
+cd applications/<app-id>/public_html
+wp plugin list | grep -iE 'smart-purge|elementor|beaver|breeze'
+```
+
+**Novamira `run-wp-cli`:** Requires PHP to spawn the `wp` binary. On staging only, remove these from `disable_functions` in **Application → PHP Settings**:
+
+- `proc_open`
+- `proc_close`
+
+If `run-wp-cli` errors with `Call to undefined function proc_close()`, `proc_open` was enabled but `proc_close` was not — enable both. Do **not** enable these on MainWP child / production sites.
 
 ## GitHub Actions secrets
 

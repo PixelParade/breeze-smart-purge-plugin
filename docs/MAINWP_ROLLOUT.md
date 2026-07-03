@@ -124,6 +124,18 @@ The repo is **public**. Use **MainWP Favorites** with a **direct zip download UR
 
 4. Name it e.g. `Smart Purge for Breeze Cache (agency)` → **Save**.
 
+**If you get `Extraction failed: Incompatible Archive` on the GitHub URL** (known MainWP Favorites quirk with some external URLs — the zip itself is fine):
+
+1. Confirm **MainWP Favorites extension is 5.2+** (Dashboard → Plugins — update the Favorites add-on).
+2. **Workaround (recommended):** download the zip once, then **Favorites → Add New → upload the `.zip` file directly** (not URL). MainWP stores it under `wp-content/uploads/mainwp/.../favorites/` on the dashboard site.
+3. Or skip Favorites for the first rollout: **Install Plugins → Upload .zip** and select the downloaded file.
+
+Download link to save locally:
+
+```
+https://github.com/PixelParade/breeze-smart-purge-plugin/releases/download/v1.1.3/smart-purge-for-breeze-cache.zip
+```
+
 **Install on child sites:**
 
 1. **MainWP → Plugins → Install Plugins → Install Favorites** (or Favorites tab).

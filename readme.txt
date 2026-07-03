@@ -3,7 +3,7 @@ Contributors: kevpress88
 Tags: cache, purge, breeze, cloudflare, performance
 Requires at least: 6.0
 Tested up to: 7.0
-Stable tag: 1.1.3
+Stable tag: 1.1.4
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -17,7 +17,7 @@ By default, Breeze aggressively caches content. When you update a custom post ty
 **Smart Purge for Breeze Cache** acts as a traffic controller for your cache. The built-in Auto-Scanner detects which pages are querying specific post types, ensuring Breeze safely clears the cache for the parent pages and associated taxonomies whenever a post is updated.
 
 ### Key Features
-* **Smart Auto-Scanner:** Automatically detects Gutenberg, Elementor, Bricks, and Beaver Builder post grids to map custom post types to their respective hub pages.
+* **Smart Auto-Scanner:** Automatically detects Gutenberg, Elementor, Bricks, Beaver Builder, Oxygen, WPBakery, and Divi post grids to map custom post types to their respective hub pages.
 * **Manual Overrides:** Easily define custom URL paths that should be purged when a specific post type is updated.
 * **Synchronous Cloudflare Purging:** Optionally bypass the default WP-Cron delay so cache purges happen instantly on "Update".
 * **Automated Taxonomy Purging:** Automatically detects and purges associated taxonomy archive URLs when a post is modified.
@@ -36,9 +36,15 @@ By default, Breeze aggressively caches content. When you update a custom post ty
 No. This is an add-on for [Breeze Cache](https://wordpress.org/plugins/breeze/). Breeze must be installed and active.
 
 = Which page builders does the Auto-Scanner detect? =
-Native Gutenberg blocks, Elementor, Bricks Builder, and Beaver Builder. Other builders can use manual URL mappings in the settings screen.
+Native Gutenberg blocks, Elementor, Bricks Builder, Beaver Builder, Oxygen (JSON meta), WPBakery, and Divi (shortcode grids). Other builders can use manual URL mappings in the settings screen.
 
 == Changelog ==
+
+= 1.1.4 =
+
+* Auto-scanner: detect WPBakery and Divi shortcode post grids (in addition to Gutenberg, Elementor, Bricks, Beaver Builder, Oxygen).
+* Admin notice when legacy or duplicate plugin folders are present after fleet rollout.
+* Public GitHub releases: agency updater works without BSP_GITHUB_TOKEN.
 
 = 1.1.3 =
 * Agency bootstrap auto-resolves GitHub update token (wp-config, server env, or encrypted settings field).

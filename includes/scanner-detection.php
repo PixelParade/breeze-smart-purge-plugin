@@ -65,9 +65,21 @@ function bsp_detect_post_type_hub_builders(array $context) {
 
 	$found_builders = array();
 	$json_regex     = bsp_build_post_type_json_regex($post_type);
+	$post_type_quoted = preg_quote($post_type, '/');
 
-	if (preg_match('/post_type=[\'"]' . preg_quote($post_type, '/') . '[\'"]/i', $content)
-		|| strpos($content, '"postType":"' . $post_type . '"') !== false) {
+	// WPBakery / Visual Composer shortcodes in post_content.
+	if (preg_match('/\[vc_[^\]]*post_type=[\'"]' . $post_type_quoted . '[\'"]/i', $content)) {
+		$found_builders[] = 'WPBakery';
+	}
+
+	// Divi Builder shortcodes in post_content.
+	if (preg_match('/\[et_pb_[^\]]*post_type=[\'"]' . $post_type_quoted . '[\'"]/i', $content)) {
+		$found_builders[] = 'Divi';
+	}
+
+	if (empty($found_builders)
+		&& (preg_match('/post_type=[\'"]' . $post_type_quoted . '[\'"]/i', $content)
+		|| strpos($content, '"postType":"' . $post_type . '"') !== false)) {
 		$found_builders[] = 'Gutenberg/Shortcode';
 	}
 
