@@ -14,4 +14,7 @@ LICENSE
 .gitignore
 .distignore
 .distignore.wporg
-assets
+composer.json
+composer.lock
+phpunit.xml.dist
+tests

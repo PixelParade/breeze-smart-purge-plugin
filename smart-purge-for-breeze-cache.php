@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Smart Purge for Breeze Cache
  * Description: Intelligently purges CPT archives, taxonomies, and page-builder hub pages when content changes in Breeze Cache.
- * Version: 1.1.2
+ * Version: 1.1.3
  * Author: PixelParade LLC
  * Author URI: https://pixelparade.co
  * License: GPL v2 or later
@@ -14,15 +14,20 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// GitHub Releases updater — private-repo / MainWP lane only (file omitted from wordpress.org builds).
-if (defined('BSP_GITHUB_TOKEN') && BSP_GITHUB_TOKEN && file_exists(__DIR__ . '/includes/github-updater.php')) {
-    require_once __DIR__ . '/includes/github-updater.php';
-}
-
-// Agency-only features — omitted from wordpress.org builds (see includes/agency/ and .distignore.wporg).
+// Agency bootstrap first — may define BSP_GITHUB_TOKEN from env or encrypted option.
 $bsp_agency_bootstrap = __DIR__ . '/includes/agency/bootstrap.php';
 if (file_exists($bsp_agency_bootstrap)) {
     require_once $bsp_agency_bootstrap;
+}
+
+// GitHub Releases updater — agency / MainWP lane only (file omitted from wordpress.org builds).
+if (file_exists(__DIR__ . '/includes/github-updater.php')) {
+    require_once __DIR__ . '/includes/github-updater.php';
+}
+
+$bsp_scanner_detection = __DIR__ . '/includes/scanner-detection.php';
+if (file_exists($bsp_scanner_detection)) {
+    require_once $bsp_scanner_detection;
 }
 
 // ====================================================================
@@ -333,6 +338,67 @@ function bsp_frontend_cache_cleared_notice() {
         . '</div>';
 }
 
+// ====================================================================
+// DUPLICATE INSTALL GUARD (fleet rollout lesson — Jul 2026)
+// ====================================================================
+
+/**
+ * Extra plugin directories that must not coexist with the canonical slug.
+ *
+ * @return string[] Basenames under wp-content/plugins/.
+ */
+function bsp_get_conflicting_plugin_dirs() {
+	$conflicts = array();
+	$plugins   = wp_normalize_path(WP_PLUGIN_DIR);
+
+	if (is_dir($plugins . '/breeze-smart-purge')) {
+		$conflicts[] = 'breeze-smart-purge';
+	}
+
+	$matches = glob($plugins . '/smart-purge-for-breeze-cache*', GLOB_ONLYDIR);
+	if (is_array($matches)) {
+		foreach ($matches as $dir) {
+			$name = basename($dir);
+			if ('smart-purge-for-breeze-cache' !== $name) {
+				$conflicts[] = $name;
+			}
+		}
+	}
+
+	return array_values(array_unique($conflicts));
+}
+
+add_action('admin_notices', 'bsp_admin_notice_conflicting_plugin_dirs');
+function bsp_admin_notice_conflicting_plugin_dirs() {
+	if (!current_user_can('activate_plugins')) {
+		return;
+	}
+
+	$conflicts = bsp_get_conflicting_plugin_dirs();
+	if (empty($conflicts)) {
+		return;
+	}
+
+	$list = implode(', ', array_map('esc_html', $conflicts));
+	?>
+	<div class="notice notice-error">
+		<p>
+			<strong><?php esc_html_e('Smart Purge: duplicate or legacy plugin folders detected', 'smart-purge-for-breeze-cache'); ?></strong>
+		</p>
+		<p>
+			<?php
+			echo esc_html__(
+				'Remove extra copies via SFTP or MainWP before updates. Only the folder smart-purge-for-breeze-cache should remain. Two active copies can double-run purge hooks.',
+				'smart-purge-for-breeze-cache'
+			);
+			?>
+			<code><?php echo esc_html($list); ?></code>
+		</p>
+		<p><?php esc_html_e('If a folder name contains backslashes or random suffixes, delete files via SFTP (WP Admin delete may fail). See docs/MAINWP_ROLLOUT.md.', 'smart-purge-for-breeze-cache'); ?></p>
+	</div>
+	<?php
+}
+
 // Set a flag to run the initial scan safely AFTER activation
 register_activation_hook(__FILE__, 'bsp_on_activation');
 function bsp_on_activation() {
@@ -555,6 +621,9 @@ function bsp_render_settings_page() {
 
     <div class="wrap">
         <h1><?php esc_html_e('Smart Purge for Breeze Cache', 'smart-purge-for-breeze-cache'); ?></h1>
+        <?php if (defined('BSP_AGENCY_BUILD') && BSP_AGENCY_BUILD) : ?>
+            <?php do_action('bsp_agency_settings_panel'); ?>
+        <?php endif; ?>
         <div style="background: #fff; padding: 15px 20px; border-left: 4px solid #2271b1; margin-bottom: 20px; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
             <p style="margin: 0; font-size: 14px;"><strong>The Problem:</strong> By default, Breeze aggressively caches content. When you update a post, it only clears the cache for that specific post. This leaves your important hub pages like: post grids, custom taxonomy archives, and page builder layouts, serving stale content to users.</p>
             <p style="margin: 8px 0 0 0; font-size: 14px;"><strong>The Solution:</strong> This tool acts as a traffic controller. The Auto-Scanner detects which pages are querying specific Post Types, ensuring Breeze safely clears the cache for the parent pages whenever a post is updated.</p>
@@ -779,13 +848,6 @@ function bsp_execute_auto_scanner($settings) {
     $log_output .= "----------------------------------------\n";
     $relations_found = 0;
 
-    $normalize_meta = function($meta) {
-        if (empty($meta)) return '';
-        if (is_string($meta)) return stripslashes($meta);
-        if (is_array($meta) || is_object($meta)) return wp_json_encode($meta);
-        return '';
-    };
-
     foreach ($pages as $page) {
         $content = $page->post_content;
         
@@ -794,51 +856,27 @@ function bsp_execute_auto_scanner($settings) {
             $page_path = '/';
         }
 
-        $elementor_data = $normalize_meta(get_post_meta($page->ID, '_elementor_data', true));
-        $oxygen_data    = $normalize_meta(get_post_meta($page->ID, 'ct_builder_json', true));
-        $beaver_data    = $normalize_meta(get_post_meta($page->ID, '_fl_builder_data', true));
+        $elementor_data = bsp_normalize_builder_meta(get_post_meta($page->ID, '_elementor_data', true));
+        $oxygen_data    = bsp_normalize_builder_meta(get_post_meta($page->ID, 'ct_builder_json', true));
+        $beaver_data    = bsp_normalize_builder_meta(get_post_meta($page->ID, '_fl_builder_data', true));
         
-        $bricks_data_1  = $normalize_meta(get_post_meta($page->ID, '_bricks_page_content', true));
-        $bricks_data_2  = $normalize_meta(get_post_meta($page->ID, '_bricks_page_content_2', true));
+        $bricks_data_1  = bsp_normalize_builder_meta(get_post_meta($page->ID, '_bricks_page_content', true));
+        $bricks_data_2  = bsp_normalize_builder_meta(get_post_meta($page->ID, '_bricks_page_content_2', true));
         $bricks_data    = $bricks_data_1 . ' ' . $bricks_data_2;
 
         foreach ($public_post_types as $pt) {
             if ($settings['hide_utility'] === 'yes' && in_array($pt, $hidden_type_slugs)) continue;
 
-            $found_builders = [];
-            
-            if (preg_match('/post_type=[\'"]' . preg_quote($pt, '/') . '[\'"]/i', $content) || strpos($content, '"postType":"' . $pt . '"') !== false) {
-                $found_builders[] = "Gutenberg/Shortcode";
-            }
-            
-            $json_regex = '/"[a-zA-Z0-9_-]*(?:post_type|postType|source|query)"\s*:\s*(?:\[[^\]]*?)?"' . preg_quote($pt, '/') . '"/i';
-
-            if (preg_match($json_regex, $elementor_data)) {
-                $found_builders[] = "Elementor";
-            } 
-            elseif ($pt === 'post' && preg_match('/"widgetType"\s*:\s*"[a-zA-Z0-9_-]*(?:post|loop|blog|magazine)[a-zA-Z0-9_-]*"/i', $elementor_data)) {
-                $found_builders[] = "Elementor (Implicit Posts)";
-            }
-
-            if (preg_match($json_regex, $bricks_data)) {
-                $found_builders[] = "Bricks";
-            }
-            elseif ($pt === 'post' && strpos($bricks_data, '"hasLoop":true') !== false && preg_match_all('/"query"\s*:\s*\{([^{}]*)\}/i', $bricks_data, $matches)) {
-                foreach ($matches[1] as $query_settings) {
-                    if (strpos($query_settings, '"post_type"') === false && strpos($query_settings, '"postType"') === false) {
-                        $found_builders[] = "Bricks (Implicit Posts)";
-                        break;
-                    }
-                }
-            }
-
-            if (preg_match($json_regex, $oxygen_data)) {
-                $found_builders[] = "Oxygen";
-            }
-            
-            if (preg_match($json_regex, $beaver_data) || (strpos($beaver_data, '"' . $pt . '"') !== false && strpos($beaver_data, 'post_type') !== false)) {
-                $found_builders[] = "Beaver Builder";
-            }
+            $found_builders = bsp_detect_post_type_hub_builders(
+                array(
+                    'post_type' => $pt,
+                    'content'   => $content,
+                    'elementor' => $elementor_data,
+                    'bricks'    => $bricks_data,
+                    'oxygen'    => $oxygen_data,
+                    'beaver'    => $beaver_data,
+                )
+            );
             
             if (!empty($found_builders)) {
                 if (!isset($scanned_map[$pt])) {

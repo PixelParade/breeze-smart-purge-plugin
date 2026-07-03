@@ -22,6 +22,11 @@ jobs:
       - name: Build agency and wordpress.org zips
         run: bash scripts/build-plugin-zips.sh
 
+      - name: Verify zip structure (no backslashes / correct root)
+        run: |
+          bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache.zip
+          bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache-wporg.zip smart-purge-for-breeze-cache
+
       - name: Create GitHub Release
         id: gh_release
         uses: softprops/action-gh-release@v2

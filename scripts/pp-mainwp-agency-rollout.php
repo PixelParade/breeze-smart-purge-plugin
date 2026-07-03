@@ -1,7 +1,12 @@
 <?php
 /**
+ * DEPRECATED for fleet rollout — use MainWP → Plugins → Upload .zip instead.
+ *
  * One-time MainWP bulk install for Smart Purge agency zip.
  * Copy to wp-content/mu-plugins/ on mainwp.pixelparade.co, trigger once, then delete.
+ *
+ * LESSON (Jul 2026): HTTP batch install + slug migration without delete-first caused
+ * duplicate plugin folders on child sites. Do not re-run if new slug is already installed.
  *
  * Trigger (secret key — change before upload):
  *   /wp-admin/admin-ajax.php?action=pp_smart_purge_rollout&key=YOUR_KEY

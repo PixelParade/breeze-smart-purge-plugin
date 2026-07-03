@@ -47,3 +47,23 @@ jobs:
           unzip -l smart-purge-for-breeze-cache.zip | grep -E 'github-updater|includes/agency/bootstrap'
           test ! -f build/wporg/smart-purge-for-breeze-cache/includes/github-updater.php
           test ! -d build/wporg/smart-purge-for-breeze-cache/includes/agency
+          bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache.zip
+          bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache-wporg.zip smart-purge-for-breeze-cache
+
+  phpunit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run PHPUnit
+        run: composer test

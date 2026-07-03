@@ -1,6 +1,6 @@
 # GitHub setup
 
-**Canonical repo:** [PixelParade/breeze-smart-purge-plugin](https://github.com/PixelParade/breeze-smart-purge-plugin) (private org repo — make public when ready for community)
+**Canonical repo:** [PixelParade/breeze-smart-purge-plugin](https://github.com/PixelParade/breeze-smart-purge-plugin) (**public** — agency zip updates work without `BSP_GITHUB_TOKEN`)
 
 **Legacy personal repo:** [Kevin-LeMasters-PixelParade/Breeze-Smart-Purge](https://github.com/Kevin-LeMasters-PixelParade/Breeze-Smart-Purge) — archive after consolidation.
 
@@ -118,9 +118,9 @@ gh run list -R PixelParade/breeze-smart-purge-plugin --workflow deploy-staging.y
 
 Or trigger manually: **Actions → Deploy to Staging → Run workflow**.
 
-### 4. WordPress update checker on staging (optional test path)
+### 4. WordPress update checker on staging (optional)
 
-While the repo is **private**, add a read-only GitHub PAT to staging `wp-config.php` so **Dashboard → Plugins** can test the **agency** release zip:
+The repo is **public** — staging and MainWP clients receive GitHub Release updates without a token. Optionally add a read-only PAT for API rate limits:
 
 See [docs/wp-config-github-updates.example.php](wp-config-github-updates.example.php).
 

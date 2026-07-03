@@ -1,7 +1,8 @@
 <?php
 /**
- * GitHub Releases update checker — private-repo / MainWP lane only.
- * Excluded from wordpress.org builds via .distignore; loaded only when BSP_GITHUB_TOKEN is set.
+ * GitHub Releases update checker — agency / MainWP lane only.
+ * Excluded from wordpress.org builds via .distignore.wporg.
+ * Public repo: browser_download_url works without a token. Token is optional (private fork / rate limits).
  *
  * @package Breeze_Smart_Purge
  */
@@ -22,6 +23,10 @@ function bsp_get_github_repo() {
 
 function bsp_get_github_token() {
 	return (defined('BSP_GITHUB_TOKEN') && BSP_GITHUB_TOKEN) ? BSP_GITHUB_TOKEN : '';
+}
+
+function bsp_github_package_needs_auth($package) {
+	return is_string($package) && false !== strpos($package, 'api.github.com/repos/');
 }
 
 function bsp_github_request_args($args = array()) {
@@ -61,8 +66,12 @@ function bsp_fetch_latest_github_release() {
 	if (!empty($data['assets']) && is_array($data['assets'])) {
 		foreach ($data['assets'] as $asset) {
 			if (!empty($asset['name']) && 'smart-purge-for-breeze-cache.zip' === $asset['name']) {
-				// API asset URL — required for private repos (browser_download_url 404s with token auth).
-				$package = !empty($asset['url']) ? $asset['url'] : $asset['browser_download_url'];
+				// Public repo: browser_download_url. Private repo: API asset URL + Bearer token.
+				if (!empty($asset['browser_download_url'])) {
+					$package = $asset['browser_download_url'];
+				} elseif (!empty($asset['url'])) {
+					$package = $asset['url'];
+				}
 				break;
 			}
 		}
@@ -159,7 +168,7 @@ function bsp_github_authenticated_download($reply, $package, $upgrader, $hook_ex
 	}
 
 	$token = bsp_get_github_token();
-	if (!$token) {
+	if (!$token || !bsp_github_package_needs_auth($package)) {
 		return $reply;
 	}
 

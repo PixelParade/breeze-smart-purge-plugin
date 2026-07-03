@@ -10,10 +10,16 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-// Register agency-only features here (hooks, filters, admin UI).
-// PixelParade MainWP clients receive this file via the agency GitHub Release zip only.
-
 if (defined('BSP_AGENCY_BUILD')) {
 	return;
 }
 define('BSP_AGENCY_BUILD', true);
+
+require_once __DIR__ . '/github-token.php';
+
+// Define BSP_GITHUB_TOKEN from env or encrypted option before github-updater.php loads.
+bsp_agency_bootstrap_github_credentials();
+
+if (!defined('BSP_GITHUB_REPO')) {
+	define('BSP_GITHUB_REPO', 'PixelParade/breeze-smart-purge-plugin');
+}
