@@ -172,8 +172,9 @@ function bsp_agency_maybe_save_github_token() {
 	wp_safe_redirect(
 		add_query_arg(
 			array(
-				'page'              => 'smart-purge-for-breeze-cache',
-				'bsp_github_saved'  => '1',
+				'page'             => 'smart-purge-for-breeze-cache',
+				'tab'              => 'updates',
+				'bsp_github_saved' => '1',
 			),
 			admin_url('options-general.php')
 		)
@@ -203,6 +204,7 @@ function bsp_agency_maybe_refresh_github_updates() {
 		add_query_arg(
 			array(
 				'page'                     => 'smart-purge-for-breeze-cache',
+				'tab'                      => 'updates',
 				'bsp_github_updates_reset' => '1',
 			),
 			admin_url('options-general.php')
@@ -245,8 +247,8 @@ function bsp_agency_render_github_settings_panel() {
 	$installed_version = function_exists('bsp_get_plugin_version') ? bsp_get_plugin_version() : '';
 	$latest_version    = $release_ok ? $release['version'] : '';
 	?>
-	<div style="flex: 1; min-width: 300px; background: #fff; padding: 20px; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04); margin-bottom: 20px;">
-		<h3 style="margin-top:0;"><?php esc_html_e('Plugin Updates', 'smart-purge-for-breeze-cache'); ?></h3>
+	<div class="bsp-updates-panel" style="max-width: 640px; background: #fff; padding: 20px; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04); margin-top: 20px;">
+		<h2 style="margin-top:0;"><?php esc_html_e('Plugin Updates', 'smart-purge-for-breeze-cache'); ?></h2>
 		<p class="description">
 			<?php esc_html_e('Updates come from public GitHub Releases. No token or setup is required on client sites.', 'smart-purge-for-breeze-cache'); ?>
 		</p>
@@ -271,7 +273,7 @@ function bsp_agency_render_github_settings_panel() {
 			<?php endif; ?>
 		</p>
 		<p>
-			<a class="button button-secondary" href="<?php echo esc_url(wp_nonce_url(admin_url('options-general.php?page=smart-purge-for-breeze-cache&bsp_refresh_github_updates=1'), 'bsp_refresh_github_updates')); ?>">
+			<a class="button button-secondary" href="<?php echo esc_url(wp_nonce_url(admin_url('options-general.php?page=smart-purge-for-breeze-cache&tab=updates&bsp_refresh_github_updates=1'), 'bsp_refresh_github_updates')); ?>">
 				<?php esc_html_e('Refresh update check', 'smart-purge-for-breeze-cache'); ?>
 			</a>
 		</p>

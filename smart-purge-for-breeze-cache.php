@@ -601,6 +601,17 @@ function bsp_render_settings_page() {
     if (!current_user_can('manage_options')) return;
     if (!bsp_check_dependencies()) return; // Stop rendering if Breeze is missing
 
+    $is_agency_build = defined('BSP_AGENCY_BUILD') && BSP_AGENCY_BUILD;
+    $allowed_tabs    = array('settings');
+    if ($is_agency_build) {
+        $allowed_tabs[] = 'updates';
+    }
+    $active_tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'settings';
+    if (!in_array($active_tab, $allowed_tabs, true)) {
+        $active_tab = 'settings';
+    }
+    $settings_base_url = admin_url('options-general.php?page=smart-purge-for-breeze-cache');
+
     $settings = wp_parse_args(get_option('bsp_settings', []), [
         'hide_utility' => 'yes',
         'force_sync'   => 'yes'
@@ -646,17 +657,71 @@ function bsp_render_settings_page() {
         }
         #bsp-toast.success { background-color: #46b450; border-left: 4px solid #34823b; }
         #bsp-toast.error { background-color: #dc3232; border-left: 4px solid #a32424; }
+        .bsp-intro-details {
+            background: #fff;
+            border: 1px solid #c3c4c7;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+            margin: 0 0 20px;
+        }
+        .bsp-intro-details summary {
+            cursor: pointer;
+            list-style: none;
+            padding: 12px 16px;
+        }
+        .bsp-intro-details summary::-webkit-details-marker {
+            display: none;
+        }
+        .bsp-intro-summary-title {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .bsp-intro-summary-hint {
+            display: block;
+            margin-top: 4px;
+            color: #646970;
+            font-weight: 400;
+            font-size: 13px;
+        }
+        .bsp-intro-body {
+            padding: 0 16px 16px 16px;
+            border-top: 1px solid #f0f0f1;
+            font-size: 14px;
+        }
+        .bsp-intro-body p {
+            margin: 12px 0 0;
+        }
+        .bsp-intro-body p:first-child {
+            margin-top: 16px;
+        }
     </style>
 
     <div class="wrap">
         <h1><?php esc_html_e('Smart Purge for Breeze Cache', 'smart-purge-for-breeze-cache'); ?></h1>
-        <?php if (defined('BSP_AGENCY_BUILD') && BSP_AGENCY_BUILD) : ?>
+        <nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e('Smart Purge settings sections', 'smart-purge-for-breeze-cache'); ?>">
+            <a href="<?php echo esc_url(add_query_arg('tab', 'settings', $settings_base_url)); ?>" class="nav-tab<?php echo 'settings' === $active_tab ? ' nav-tab-active' : ''; ?>">
+                <?php esc_html_e('Smart Purge', 'smart-purge-for-breeze-cache'); ?>
+            </a>
+            <?php if ($is_agency_build) : ?>
+            <a href="<?php echo esc_url(add_query_arg('tab', 'updates', $settings_base_url)); ?>" class="nav-tab<?php echo 'updates' === $active_tab ? ' nav-tab-active' : ''; ?>">
+                <?php esc_html_e('Plugin Updates', 'smart-purge-for-breeze-cache'); ?>
+            </a>
+            <?php endif; ?>
+        </nav>
+
+        <?php if ('updates' === $active_tab && $is_agency_build) : ?>
             <?php do_action('bsp_agency_settings_panel'); ?>
-        <?php endif; ?>
-        <div style="background: #fff; padding: 15px 20px; border-left: 4px solid #2271b1; margin-bottom: 20px; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
-            <p style="margin: 0; font-size: 14px;"><strong>The Problem:</strong> By default, Breeze aggressively caches content. When you update a post, it only clears the cache for that specific post. This leaves your important hub pages like: post grids, custom taxonomy archives, and page builder layouts, serving stale content to users.</p>
-            <p style="margin: 8px 0 0 0; font-size: 14px;"><strong>The Solution:</strong> This tool acts as a traffic controller. The Auto-Scanner detects which pages are querying specific Post Types, ensuring Breeze safely clears the cache for the parent pages whenever a post is updated.</p>
-        </div>
+        <?php else : ?>
+        <details class="bsp-intro-details">
+            <summary>
+                <span class="bsp-intro-summary-title"><?php esc_html_e('What does Smart Purge do?', 'smart-purge-for-breeze-cache'); ?></span>
+                <span class="bsp-intro-summary-hint"><?php esc_html_e('Clears hub pages, grids, and archives when you update posts — expand for details.', 'smart-purge-for-breeze-cache'); ?></span>
+            </summary>
+            <div class="bsp-intro-body">
+                <p><strong><?php esc_html_e('The Problem:', 'smart-purge-for-breeze-cache'); ?></strong> <?php esc_html_e('By default, Breeze aggressively caches content. When you update a post, it only clears the cache for that specific post. This leaves your important hub pages like: post grids, custom taxonomy archives, and page builder layouts, serving stale content to users.', 'smart-purge-for-breeze-cache'); ?></p>
+                <p><strong><?php esc_html_e('The Solution:', 'smart-purge-for-breeze-cache'); ?></strong> <?php esc_html_e('This tool acts as a traffic controller. The Auto-Scanner detects which pages are querying specific Post Types, ensuring Breeze safely clears the cache for the parent pages whenever a post is updated.', 'smart-purge-for-breeze-cache'); ?></p>
+            </div>
+        </details>
         
         <form id="bsp-settings-form" method="post" action="" onsubmit="return false;">
             <?php wp_nonce_field('bsp_save_action'); ?>
@@ -758,8 +823,10 @@ function bsp_render_settings_page() {
                 <button type="button" class="button button-primary button-large bsp-btn-save">Save All Changes</button>
             </p>
         </form>
+        <?php endif; ?>
     </div>
 
+    <?php if ('settings' === $active_tab) : ?>
     <div id="bsp-toast">Message</div>
 
     <script>
@@ -852,6 +919,7 @@ function bsp_render_settings_page() {
         });
     });
     </script>
+    <?php endif; ?>
     <?php
 }
 
