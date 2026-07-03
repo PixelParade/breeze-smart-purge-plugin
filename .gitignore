@@ -15,3 +15,4 @@ build/
 scripts/deploy-to-staging-mcp.*
 scripts/deploy-to-staging-stdio.py
 scripts/test-admin-bar-staging.php
+assets/wporg/reference/

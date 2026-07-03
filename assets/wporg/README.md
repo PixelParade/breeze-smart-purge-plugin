@@ -9,13 +9,25 @@ Upload these files to the **SVN `assets/` folder** (not inside `trunk/` or the p
 | `banner-772x250.png` | Plugin page banner |
 | `banner-1544x500.png` | Retina banner (optional) |
 
-Visual style is inspired by [Breeze Cache](https://wordpress.org/plugins/breeze/) (cyan/blue breeze motif) with an orange purge-arrow accent to indicate an add-on — not official Cloudways branding.
+## Visual style
 
-After approval:
+Derived from the official [Breeze Cache](https://wordpress.org/plugins/breeze/) wordpress.org artwork (cyan sky, wave landscape, breeze-line typography):
+
+- **Icon:** Breeze-style blue circle with breeze-line **B** + orange refresh badge (purge add-on).
+- **Banner:** Same layout as Breeze banner — **SMART PURGE** / *for Breeze Cache* with refresh motion graphic.
+
+This is an **unofficial add-on** — not Cloudways branding. Do not reuse Breeze assets verbatim on the directory page; use only the files in this folder.
+
+Reference URLs (local dev only, not committed):
+
+- https://ps.w.org/breeze/assets/icon-128x128.gif
+- https://ps.w.org/breeze/assets/banner-772x250.jpg
+
+## SVN upload
 
 ```bash
 svn co https://plugins.svn.wordpress.org/<your-slug>
-cp assets/wporg/* assets/   # from repo root, into SVN assets/
-svn add assets/*
+cp assets/wporg/*.png assets/   # into SVN checkout assets/
+svn add assets/*.png
 svn commit -m "Add plugin icons and banner."
 ```
