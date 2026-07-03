@@ -2,13 +2,11 @@
  * Plugin icon and banner display — Updates screen, Plugins list, View details modal.
  */
 
-/* Icons ship with baked checkerboard padding; contain preserves that spacing in WP's 64px slots. */
 img.plugin-icon[src*="smart-purge-for-breeze-cache"],
 #plugin-information-content img.plugin-icon[src*="smart-purge-for-breeze-cache"],
 #plugin-information-header img.plugin-icon[src*="smart-purge-for-breeze-cache"] {
-	object-fit: contain;
+	object-fit: cover;
 	object-position: center;
-	border-radius: 4px;
 }
 
 #plugin-information-title.with-banner {

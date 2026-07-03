@@ -28,7 +28,7 @@ Derived from the official [Breeze Cache](https://wordpress.org/plugins/breeze/) 
 | `banner-772x250.png` | 772 × 250 |
 | `banner-1544x500.png` | 1544 × 500 |
 
-Regenerate `icon-256x256` and `icon-512x512` with `py scripts/build-padded-icons.py` (76% artwork scale, checkerboard padding baked into the PNG).
+Regenerate icons with `py scripts/build-padded-icons.py` (transparent canvas, artwork cover-scaled to fill the square).
 
 This is an **unofficial add-on** — not Cloudways branding. Do not reuse Breeze assets verbatim on the directory page; use only the files in this folder.
 
