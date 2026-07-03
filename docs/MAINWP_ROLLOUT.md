@@ -164,7 +164,7 @@ Keep a simple register (MainWP site notes or spreadsheet):
 
 | MainWP site ID | Domain | Lane | Plugin version | Token set | Last rollout | Notes |
 |----------------|--------|------|--------------|-----------|--------------|-------|
-| 16 | pixelparade.co | Agency | 1.1.1 | Yes | 2026-07-03 | Slug `smart-purge-for-breeze-cache`; remove legacy `breeze-smart-purge` |
+| 16 | pixelparade.co | Agency | 1.1.2 | Yes | 2026-07-03 | `BSP_GITHUB_TOKEN` set; GitHub updater verified 1.0.1 → 1.1.1 |
 | | | | | | | |
 
 ## Emergency hotfix

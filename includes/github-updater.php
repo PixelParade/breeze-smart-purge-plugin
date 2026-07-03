@@ -61,7 +61,8 @@ function bsp_fetch_latest_github_release() {
 	if (!empty($data['assets']) && is_array($data['assets'])) {
 		foreach ($data['assets'] as $asset) {
 			if (!empty($asset['name']) && 'smart-purge-for-breeze-cache.zip' === $asset['name']) {
-				$package = $asset['browser_download_url'];
+				// API asset URL — required for private repos (browser_download_url 404s with token auth).
+				$package = !empty($asset['url']) ? $asset['url'] : $asset['browser_download_url'];
 				break;
 			}
 		}

@@ -3,7 +3,7 @@ Contributors: kevpress88
 Tags: cache, purge, breeze, cloudflare, performance
 Requires at least: 6.0
 Tested up to: 7.0
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -39,6 +39,9 @@ No. This is an add-on for [Breeze Cache](https://wordpress.org/plugins/breeze/).
 Native Gutenberg blocks, Elementor, Bricks Builder, and Beaver Builder. Other builders can use manual URL mappings in the settings screen.
 
 == Changelog ==
+
+= 1.1.2 =
+* Fix GitHub Release plugin updates when the repository is private (authenticated asset download).
 
 = 1.1.1 =
 * Plugin folder and text domain aligned to `smart-purge-for-breeze-cache` (wordpress.org slug).
