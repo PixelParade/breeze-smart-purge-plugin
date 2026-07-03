@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 env:
-  PLUGIN_SLUG: breeze-smart-purge
-  STAGING_REMOTE_PLUGIN_PATH: public_html/wp-content/plugins/breeze-smart-purge
+  PLUGIN_SLUG: smart-purge-for-breeze-cache
+  STAGING_REMOTE_PLUGIN_PATH: public_html/wp-content/plugins/smart-purge-for-breeze-cache
 
 jobs:
   deploy:
@@ -23,7 +23,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq sshpass
           REMOTE="${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}:${{ env.STAGING_REMOTE_PLUGIN_PATH }}/"
-          sshpass -e scp -o StrictHostKeyChecking=no breeze-smart-purge.php readme.txt "$REMOTE"
+          sshpass -e scp -o StrictHostKeyChecking=no smart-purge-for-breeze-cache.php readme.txt "$REMOTE"
 
       - name: Deploy summary
         run: |

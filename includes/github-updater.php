@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-$bsp_main_plugin = dirname(__DIR__) . '/breeze-smart-purge.php';
+$bsp_main_plugin = dirname(__DIR__) . '/smart-purge-for-breeze-cache.php';
 
 add_filter('pre_set_site_transient_update_plugins', 'bsp_pre_set_github_plugin_update');
 add_filter('plugins_api', 'bsp_plugins_api_github_info', 20, 3);
@@ -60,7 +60,7 @@ function bsp_fetch_latest_github_release() {
 	$package = '';
 	if (!empty($data['assets']) && is_array($data['assets'])) {
 		foreach ($data['assets'] as $asset) {
-			if (!empty($asset['name']) && 'breeze-smart-purge.zip' === $asset['name']) {
+			if (!empty($asset['name']) && 'smart-purge-for-breeze-cache.zip' === $asset['name']) {
 				$package = $asset['browser_download_url'];
 				break;
 			}
@@ -94,7 +94,7 @@ function bsp_pre_set_github_plugin_update($transient) {
 	}
 
 	$update = (object) array(
-		'slug'         => 'breeze-smart-purge',
+		'slug'         => 'smart-purge-for-breeze-cache',
 		'plugin'       => $plugin_file,
 		'new_version'  => $release['version'],
 		'url'          => $release['url'],
@@ -117,7 +117,7 @@ function bsp_plugins_api_github_info($result, $action, $args) {
 	if ('plugin_information' !== $action) {
 		return $result;
 	}
-	if (empty($args->slug) || 'breeze-smart-purge' !== $args->slug) {
+	if (empty($args->slug) || 'smart-purge-for-breeze-cache' !== $args->slug) {
 		return $result;
 	}
 
@@ -128,7 +128,7 @@ function bsp_plugins_api_github_info($result, $action, $args) {
 
 	return (object) array(
 		'name'          => 'Smart Purge for Breeze Cache',
-		'slug'          => 'breeze-smart-purge',
+		'slug'          => 'smart-purge-for-breeze-cache',
 		'version'       => $release['version'],
 		'author'        => '<a href="https://pixelparade.co">PixelParade LLC</a>',
 		'homepage'      => 'https://pixelparade.co',
@@ -180,13 +180,13 @@ function bsp_github_authenticated_download($reply, $package, $upgrader, $hook_ex
 	if (200 !== (int) wp_remote_retrieve_response_code($response)) {
 		return new WP_Error(
 			'bsp_github_download_failed',
-			__('GitHub release download failed. Check BSP_GITHUB_TOKEN in wp-config.php.', 'breeze-smart-purge')
+			__('GitHub release download failed. Check BSP_GITHUB_TOKEN in wp-config.php.', 'smart-purge-for-breeze-cache')
 		);
 	}
 
 	$tmp = wp_tempnam($package);
 	if (!$tmp) {
-		return new WP_Error('bsp_temp_file', __('Could not create a temporary file for the update.', 'breeze-smart-purge'));
+		return new WP_Error('bsp_temp_file', __('Could not create a temporary file for the update.', 'smart-purge-for-breeze-cache'));
 	}
 
 	file_put_contents($tmp, wp_remote_retrieve_body($response));

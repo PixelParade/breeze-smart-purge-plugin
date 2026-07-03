@@ -10,14 +10,14 @@ alwaysApply: true
 ## Identity
 
 - **Plugin name:** Smart Purge for Breeze Cache
-- **Slug / folder:** `breeze-smart-purge`
-- **Text domain:** `smart-purge-for-breeze-cache` (matches wordpress.org slug; dev folder remains `breeze-smart-purge`)
-- **Main file:** `breeze-smart-purge.php` (single-file plugin — all logic lives here)
+- **Slug / folder:** `smart-purge-for-breeze-cache`
+- **Text domain:** `smart-purge-for-breeze-cache`
+- **Main file:** `smart-purge-for-breeze-cache.php`
 - **Version:** bump in plugin header only (no separate version constant)
 
 ## Architecture
 
-- **Core:** `breeze-smart-purge.php` + `readme.txt`; optional `includes/github-updater.php` for private GitHub updates only (excluded from wp.org zip)
+- **Core:** `smart-purge-for-breeze-cache.php` + `readme.txt`; optional `includes/github-updater.php` for private GitHub updates (excluded from wp.org zip)
 - **Function prefix:** `bsp_` for all functions, AJAX actions, and hooks
 - **Options prefix:** `bsp_` (e.g. `bsp_settings`, `bsp_scanned_map`, `bsp_manual_map`)
 - **Dependency:** requires active Breeze Cache plugin (`BREEZE_VERSION` defined; `Requires Plugins: breeze`)
@@ -33,7 +33,8 @@ alwaysApply: true
 ## Environments
 
 - **Staging:** `breeze-smart-purge.pixelparade.dev` — see [docs/ACCESS.md](docs/ACCESS.md)
-- **Clients:** GitHub release tags + MainWP; wordpress.org SVN when listed
+- **wordpress.org:** SVN slug `smart-purge-for-breeze-cache`
+- **Clients:** GitHub release tags + MainWP
 
 ## Secrets
 
@@ -42,7 +43,7 @@ alwaysApply: true
 
 ## Dev workflow
 
-1. Edit `breeze-smart-purge.php` locally (source of truth)
+1. Edit `smart-purge-for-breeze-cache.php` locally (source of truth)
 2. Push to `main` → GitHub Actions deploys to staging
 3. Test on staging (WP-CLI + browser)
 4. Tag `v*` release → GitHub Release zip → MainWP rollout to client sites

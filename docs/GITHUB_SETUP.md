@@ -115,12 +115,12 @@ After the repo is **public**, the token is optional (API rate limits still apply
 ## Releases and client rollout
 
 ```powershell
-# Bump Version: in breeze-smart-purge.php header + readme.txt Stable tag, commit, then:
+# Bump Version: in smart-purge-for-breeze-cache.php header + readme.txt Stable tag, commit, then:
 git tag v1.0.2
 git push origin v1.0.2
 ```
 
-GitHub Actions builds `breeze-smart-purge.zip` and attaches it to the release.
+GitHub Actions builds `smart-purge-for-breeze-cache.zip` and attaches it to the release.
 
 - **MainWP:** bulk update from the release asset URL
 - **Native WP:** Plugins → Update available (plugin checks GitHub Releases API)

@@ -15,11 +15,11 @@ Use this for the **public** [wordpress.org plugin directory](https://wordpress.o
 | Concept | Value |
 |---------|--------|
 | **Display name** | Smart Purge for Breeze Cache (`Plugin Name` header) |
-| **Text domain** | `breeze-smart-purge` (unchanged — avoids breaking translations) |
-| **Dev / staging folder** | `breeze-smart-purge` (current repo + deploy path) |
+| **Text domain** | `smart-purge-for-breeze-cache` |
+| **Folder / main file** | `smart-purge-for-breeze-cache/` + `smart-purge-for-breeze-cache.php` |
 | **wordpress.org SVN folder** | Whatever slug WordPress approves — zip root folder **must match** |
 
-If the approved slug is `smart-purge-for-breeze-cache`, rename the plugin folder inside the SVN `trunk/` zip before first commit. The GitHub/private lane can keep `breeze-smart-purge` until you choose to align folder names.
+If the approved slug differs from `smart-purge-for-breeze-cache`, rename the folder and main PHP file to match before the first SVN commit.
 
 ## First public version: 1.0.0
 
@@ -66,7 +66,7 @@ Run Plugin Check before every SVN commit.
 
 ```bash
 wp plugin install plugin-check --activate
-wp plugin check breeze-smart-purge --require=wp-content/plugins/plugin-check/cli.php
+wp plugin check smart-purge-for-breeze-cache --require=wp-content/plugins/plugin-check/cli.php
 ```
 
 CI builds a clean folder from `.distignore` then runs [wordpress/plugin-check-action](https://github.com/wordpress/plugin-check-action).

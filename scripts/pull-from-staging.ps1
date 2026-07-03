@@ -26,12 +26,12 @@ function Invoke-PlinkPull {
         throw 'plink not found in PATH. Install PuTTY or add plink.exe to PATH.'
     }
 
-    $phpPath = Join-Path $root 'breeze-smart-purge.php'
+    $phpPath = Join-Path $root 'smart-purge-for-breeze-cache.php'
     $readmePath = Join-Path $root 'readme.txt'
 
     Write-Host 'Using plink fallback (cat + base64)...'
 
-    $php = & $plink.Source -batch -pw $password $hostSpec "cat '$remote/breeze-smart-purge.php'"
+    $php = & $plink.Source -batch -pw $password $hostSpec "cat '$remote/smart-purge-for-breeze-cache.php'"
     if ($LASTEXITCODE -ne 0) { throw "plink cat failed (exit $LASTEXITCODE)" }
     [System.IO.File]::WriteAllText($phpPath, ($php -join "`n"), [System.Text.UTF8Encoding]::new($false))
 

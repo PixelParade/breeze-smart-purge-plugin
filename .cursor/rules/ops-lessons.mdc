@@ -13,12 +13,12 @@ alwaysApply: true
 
 ## After every deploy or significant PHP change
 
-1. `cd public_html && wp plugin list | grep breeze-smart-purge`
+1. `cd public_html && wp plugin list | grep smart-purge`
 2. Homepage and wp-admin load without critical error.
 3. Browser check: settings screen and Breeze toolbar while logged in.
-4. Confirm `Version:` in deployed `breeze-smart-purge.php`.
+4. Confirm `Version:` in deployed `smart-purge-for-breeze-cache.php`.
 
-Emergency hotfix: SCP to `public_html/wp-content/plugins/breeze-smart-purge/` without waiting for CI.
+Emergency hotfix: SCP to `public_html/wp-content/plugins/smart-purge-for-breeze-cache/` without waiting for CI.
 
 ## Logs (staging)
 

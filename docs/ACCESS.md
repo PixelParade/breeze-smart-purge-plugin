@@ -38,7 +38,7 @@ Preferred: **SSH key** deploy (see `scripts/setup-github-secrets.ps1`).
 | `STAGING_SSH_KEY` | Private deploy key (preferred) |
 | `STAGING_SSH_PASSWORD` | Fallback only — rotate if exposed |
 
-Current workflow deploys `breeze-smart-purge.php` and `readme.txt` to `public_html/wp-content/plugins/breeze-smart-purge/`.
+Current workflow deploys `smart-purge-for-breeze-cache.php` and `readme.txt` to `public_html/wp-content/plugins/smart-purge-for-breeze-cache/`.
 
 ## Private-repo plugin updates
 
@@ -59,8 +59,8 @@ Template: [wp-config-github-updates.example.php](wp-config-github-updates.exampl
 ## Verify deploys
 
 ```powershell
-cd public_html && wp plugin list | grep breeze-smart-purge
-grep 'Version:' wp-content/plugins/breeze-smart-purge/breeze-smart-purge.php
+cd public_html && wp plugin list | grep smart-purge
+grep 'Version:' wp-content/plugins/smart-purge-for-breeze-cache/smart-purge-for-breeze-cache.php
 ```
 
 | Log / check | Location |

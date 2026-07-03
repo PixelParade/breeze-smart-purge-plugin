@@ -6,8 +6,8 @@ on:
       - 'v*'
 
 env:
-  PLUGIN_SLUG: breeze-smart-purge
-  ZIP_NAME: breeze-smart-purge.zip
+  PLUGIN_SLUG: smart-purge-for-breeze-cache
+  ZIP_NAME: smart-purge-for-breeze-cache.zip
 
 jobs:
   release:
@@ -46,7 +46,7 @@ jobs:
 
       - name: Release summary
         run: |
-          echo "Release asset: breeze-smart-purge.zip (folder ${{ env.PLUGIN_SLUG }}/ inside zip)"
+          echo "Release asset: smart-purge-for-breeze-cache.zip (folder ${{ env.PLUGIN_SLUG }}/ inside zip)"
           echo "WordPress: Dashboard → Plugins → Update (needs BSP_GITHUB_TOKEN while repo is private)"
           echo "MainWP: install/update from the GitHub release asset URL"
           echo "Release URL: ${{ steps.gh_release.outputs.url }}"

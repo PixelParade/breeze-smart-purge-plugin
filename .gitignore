@@ -10,6 +10,7 @@ Thumbs.db
 *.log
 .cursor/mcp.json
 build/
+dist/
 .deploy-chunks/
 .deploy-parts/
 scripts/deploy-to-staging-mcp.*

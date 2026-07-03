@@ -20,14 +20,14 @@ jobs:
 
       - name: Build distributable plugin folder
         run: |
-          mkdir -p build/breeze-smart-purge
+          mkdir -p build/smart-purge-for-breeze-cache
           rsync -av \
             --exclude-from='.distignore' \
             --exclude='build' \
-            ./ build/breeze-smart-purge/
+            ./ build/smart-purge-for-breeze-cache/
 
       - name: Run Plugin Check
         uses: wordpress/plugin-check-action@v1
         with:
-          build-dir: './build/breeze-smart-purge'
+          build-dir: './build/smart-purge-for-breeze-cache'
           exclude-directories: '.git,.github'
