@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Smart Purge for Breeze Cache
  * Description: Intelligently purges CPT archives, taxonomies, and page-builder hub pages when content changes in Breeze Cache.
- * Version: 1.1.10
+ * Version: 1.1.11
  * Author: PixelParade LLC
  * Author URI: https://pixelparade.co
  * License: GPL v2 or later
