@@ -3,7 +3,7 @@ Contributors: pixelparade
 Tags: cache, purge, breeze, cloudflare, performance
 Requires at least: 6.0
 Tested up to: 6.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -37,6 +37,10 @@ No, this is an add-on utility. You must have the Breeze plugin installed and act
 Currently, the Auto-Scanner officially supports native Gutenberg blocks, Elementor, Bricks Builder, and Beaver Builder. If you use a different builder, you can map your URLs manually in the settings.
 
 == Changelog ==
+
+= 1.0.5 =
+* Fix PHP parse error from jQuery inline script (dollar signs in double-quoted string).
+* Stop calling Breeze load_admin_scripts on frontend (crashes when current screen is null).
 
 = 1.0.4 =
 * Frontend toolbar delegates to Breeze's own admin bar menu instead of re-declaring items.

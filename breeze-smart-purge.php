@@ -3,7 +3,7 @@
  * Plugin Name: Breeze Smart Purge
  * Plugin URI: https://pixelparade.co
  * Description: Intelligently purges CPT Archives, Taxonomies, and Custom Page Builder Hubs via Breeze and Cloudflare.
- * Version: 1.0.4
+ * Version: 1.0.5
  * Author: PixelParade LLC
  * Author URI: https://pixelparade.co
  * License: GPL v2 or later
@@ -310,6 +310,9 @@ function bsp_invoke_breeze_admin_bar_menu($wp_admin_bar) {
         $admin = $ref->newInstanceWithoutConstructor();
         $ref->getMethod('register_admin_bar_menu')->invoke($admin, $wp_admin_bar);
         bsp_fix_breeze_toolbar_purge_hrefs($wp_admin_bar);
+    } catch (Throwable $e) {
+        // If Breeze changes its API, avoid taking the site down.
+        return;
     } finally {
         $current_screen = $saved_screen;
     }
@@ -383,17 +386,55 @@ function bsp_define_frontend_ajaxurl() {
 }
 
 function bsp_enqueue_frontend_breeze_toolbar_assets() {
-    if (!bsp_should_load_frontend_breeze_toolbar_assets() || !class_exists('Breeze_Admin')) {
+    if (!bsp_should_load_frontend_breeze_toolbar_assets()) {
         return;
     }
 
-    $ref   = new ReflectionClass('Breeze_Admin');
-    $admin = $ref->newInstanceWithoutConstructor();
-    $ref->getMethod('load_admin_scripts')->invoke($admin, 'bsp-frontend');
+    if (!wp_script_is('jquery', 'enqueued')) {
+        wp_enqueue_script('jquery');
+    }
+
+    $min              = (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG) ? '' : '.min';
+    $breeze_admin_file = BREEZE_PLUGIN_DIR . 'inc/breeze-admin.php';
+
+    wp_enqueue_style(
+        'breeze-notice',
+        plugins_url('assets/css/breeze-admin-global.css', $breeze_admin_file),
+        [],
+        BREEZE_VERSION
+    );
+
+    wp_enqueue_script(
+        'breeze-backend',
+        plugins_url('assets/js/breeze-main' . $min . '.js', $breeze_admin_file),
+        ['jquery'],
+        BREEZE_VERSION,
+        true
+    );
+
+    wp_localize_script(
+        'breeze-backend',
+        'breeze_token_name',
+        [
+            'breeze_purge_varnish'      => wp_create_nonce('_breeze_purge_varnish'),
+            'breeze_purge_database'     => wp_create_nonce('_breeze_purge_database'),
+            'breeze_purge_cache'        => wp_create_nonce('_breeze_purge_cache'),
+            'breeze_save_options'       => wp_create_nonce('_breeze_save_options'),
+            'breeze_purge_opcache'      => wp_create_nonce('_breeze_purge_opcache'),
+            'breeze_import_settings'    => wp_create_nonce('_breeze_import_settings'),
+            'breeze_reset_default'      => wp_create_nonce('_breeze_reset_default'),
+            'breeze_check_cdn_url'      => wp_create_nonce('_breeze_check_cdn_url'),
+            'breeze_check_compat'       => wp_create_nonce('_breeze_check_compat'),
+            'breeze_check_permission'   => wp_create_nonce('_breeze_check_permission'),
+            'breeze_export_json'        => wp_create_nonce('_breeze_export_json'),
+            'breeze_apply_optimization' => wp_create_nonce('_breeze_apply_optimization'),
+            'breeze_restore_settings'   => wp_create_nonce('_breeze_restore_settings'),
+        ]
+    );
 
     wp_add_inline_script(
         'breeze-backend',
-        "jQuery(function($){if(!$('#wpbody-content').length){$('body').append('<div id=\"wpbody-content\" style=\"position:fixed;bottom:20px;right:20px;z-index:99999;max-width:400px;\"></div>');}});",
+        'jQuery(function($){if(!$(\'#wpbody-content\').length){$(\'body\').append(\'<div id="wpbody-content" style="position:fixed;bottom:20px;right:20px;z-index:99999;max-width:400px;"></div>\');}});',
         'after'
     );
 }
