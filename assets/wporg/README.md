@@ -18,6 +18,17 @@ Derived from the official [Breeze Cache](https://wordpress.org/plugins/breeze/) 
 - **Icon:** Breeze-style rounded square — blue gradient, browser + speedometer gauge (per official Breeze icon), orange refresh badge for purge add-on.
 - **Banner:** Same layout as Breeze banner — **SMART PURGE** / *for Breeze Cache* with refresh motion graphic.
 
+**Dimensions must match filenames exactly** (WordPress squishes wrong aspect ratios in Updates / View details):
+
+| File | Pixels |
+|------|--------|
+| `icon-128x128.png` | 128 × 128 |
+| `icon-256x256.png` | 256 × 256 |
+| `banner-772x250.png` | 772 × 250 |
+| `banner-1544x500.png` | 1544 × 500 |
+
+Regenerate `icon-256x256` from `icon-128x128` and `banner-1544x500` from `banner-772x250` — do not export both from a shared 3:2 master without cropping.
+
 This is an **unofficial add-on** — not Cloudways branding. Do not reuse Breeze assets verbatim on the directory page; use only the files in this folder.
 
 Reference URLs (local dev only, not committed):
