@@ -127,7 +127,7 @@ function bsp_plugins_api_github_info($result, $action, $args) {
 	}
 
 	return (object) array(
-		'name'          => 'Breeze Smart Purge',
+		'name'          => 'Smart Purge for Breeze Cache',
 		'slug'          => 'breeze-smart-purge',
 		'version'       => $release['version'],
 		'author'        => '<a href="https://pixelparade.co">PixelParade LLC</a>',

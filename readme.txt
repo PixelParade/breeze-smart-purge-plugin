@@ -1,20 +1,20 @@
-=== Breeze Smart Purge ===
-Contributors: pixelparade
+=== Smart Purge for Breeze Cache ===
+Contributors: kevpress88
 Tags: cache, purge, breeze, cloudflare, performance
 Requires at least: 6.0
 Tested up to: 7.0
-Stable tag: 1.1.0
+Stable tag: 1.0.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Intelligently purges CPT Archives, Taxonomies, and Custom Page Builder Hubs via Breeze and Cloudflare.
+Intelligently purges CPT archives, taxonomies, and page-builder hub pages when content changes in Breeze Cache.
 
 == Description ==
 
 By default, Breeze aggressively caches content. When you update a custom post type, it only clears the cache for that specific post. This leaves your important hub pages—like post grids, custom taxonomy archives, and page builder layouts—serving stale content to users.
 
-**Breeze Smart Purge** acts as a traffic controller for your cache. The built-in Auto-Scanner detects which pages are querying specific Post Types, ensuring Breeze safely clears the cache for the parent pages and associated taxonomies whenever a post is updated.
+**Smart Purge for Breeze Cache** acts as a traffic controller for your cache. The built-in Auto-Scanner detects which pages are querying specific post types, ensuring Breeze safely clears the cache for the parent pages and associated taxonomies whenever a post is updated.
 
 ### Key Features
 * **Smart Auto-Scanner:** Automatically detects Gutenberg, Elementor, Bricks, and Beaver Builder post grids to map custom post types to their respective hub pages.
@@ -25,51 +25,27 @@ By default, Breeze aggressively caches content. When you update a custom post ty
 
 == Installation ==
 
-1. Upload the entire `breeze-smart-purge` folder to the `/wp-content/plugins/` directory, or install the plugin through the WordPress plugins screen directly via a zip file.
-2. Activate the plugin through the 'Plugins' screen in WordPress.
+1. Upload the plugin folder to `/wp-content/plugins/` (folder name must match your install path), or install through the WordPress plugins screen from a zip file.
+2. Activate the plugin through the **Plugins** screen in WordPress.
 3. Ensure the [Breeze](https://wordpress.org/plugins/breeze/) cache plugin is active.
-4. Navigate to **Settings > Breeze Smart Purge** to run your first Smart Scan and configure your mappings.
+4. Navigate to **Settings ? Smart Purge** to run your first Smart Scan and configure your mappings.
 
 == Frequently Asked Questions ==
 
 = Does this replace the Breeze cache plugin? =
-No, this is an add-on utility. You must have the Breeze plugin installed and active for this to work.
+No. This is an add-on for [Breeze Cache](https://wordpress.org/plugins/breeze/). Breeze must be installed and active.
 
 = Which page builders does the Auto-Scanner detect? =
-Currently, the Auto-Scanner officially supports native Gutenberg blocks, Elementor, Bricks Builder, and Beaver Builder. If you use a different builder, you can map your URLs manually in the settings.
+Native Gutenberg blocks, Elementor, Bricks Builder, and Beaver Builder. Other builders can use manual URL mappings in the settings screen.
 
 == Changelog ==
 
-= 1.1.0 =
-* WordPress.org readiness: Plugin Check CI, readme compliance, GitHub updater moved to optional include for private-repo builds.
-* Requires Plugins header for Breeze dependency (WordPress 6.5+).
-
-= 1.0.6 =
-* Fix frontend Breeze toolbar: load WP_Screen before delegating to Breeze admin bar (v1.0.4 stub caused silent failure).
-
-= 1.0.5 =
-* Fix PHP parse error from jQuery inline script (dollar signs in double-quoted string).
-* Stop calling Breeze load_admin_scripts on frontend (crashes when current screen is null).
-
-= 1.0.4 =
-* Frontend toolbar delegates to Breeze's own admin bar menu instead of re-declaring items.
-* BSP only adds Smart Purge links; purge URLs and Breeze JS are adapted for the frontend.
-
-= 1.0.3 =
-* Frontend Breeze toolbar now matches wp-admin: Purge Modules submenu, Settings, Support, and Smart Purge items.
-* Load Breeze toolbar JS on the frontend for module purge actions (internal, object, varnish).
-
-= 1.0.2 =
-* Add GitHub Releases update checker (Dashboard ? Plugins ? Update available).
-* Authenticated download support for private org repo via BSP_GITHUB_TOKEN in wp-config.php.
-
-= 1.0.1 =
-* Add Breeze admin bar on the frontend with per-page clear cache.
-* Add Smart Purge Settings link to the Breeze toolbar in wp-admin.
-
 = 1.0.0 =
-* Initial release.
-* Security Patch: Added wp_unslash() to form submission handlers.
-* Fix: Replaced standard parse_url with wp_parse_url for strict environment consistency.
-* Fix: Added missing text domains for i18n translation compatibility.
-* Enhancement: Added clean uninstall logic to prevent database bloat upon plugin deletion.
+* Initial public release.
+* Smart Auto-Scanner for Gutenberg, Elementor, Bricks, and Beaver Builder hub pages.
+* Manual and ignored URL mappings per post type.
+* Automated taxonomy archive purging.
+* Optional synchronous Cloudflare purge on post update.
+* Frontend Breeze admin bar integration with per-page clear cache.
+* Settings screen under **Settings ? Smart Purge**.
+* Requires the Breeze Cache plugin (`Requires Plugins: breeze`).

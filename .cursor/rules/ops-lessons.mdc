@@ -53,12 +53,9 @@ If site is down: **SCP hotfix** to `public_html/wp-content/plugins/breeze-smart-
 
 ## WP.org submission
 
-- Run **Plugin Check** (`.github/workflows/plugin-check.yml` + `wp plugin check` on staging).
-- Release zip must contain only distributable files (`.distignore`); no `.github`, `docs`, `scripts`, dev chunks.
-- **GitHub updater** lives in `includes/github-updater.php`; excluded from wp.org zip via `.distignore`; loaded only when `BSP_GITHUB_TOKEN` is in wp-config. GitHub Release zip (`release.yml`) still includes it.
-- `readme.txt`: valid UTF-8 (no mojibake), `Tested up to` current WP, `Stable tag` matches header `Version`, `Contributors:` wp.org slugs.
-- Plugin Check on staging: `wp plugin install plugin-check --activate` then `wp plugin check breeze-smart-purge --require=wp-content/plugins/plugin-check/cli.php`.
-- Full checklist: `docs/WPORG_SUBMISSION.md`.
+- **Display name:** Smart Purge for Breeze Cache. **First wp.org release:** `1.0.0` (private GitHub `v1.0.x`–`v1.1.x` were pre-directory beta).
+- Apply at [wordpress.org/plugins/developers/add/](https://wordpress.org/plugins/developers/add/); prefer slug `smart-purge-for-breeze-cache` if available.
+- Security: [WordPress Security APIs](https://developer.wordpress.org/apis/security/) — nonces, caps, sanitize/escape; full checklist in `docs/WPORG_SUBMISSION.md`.
 
 ## Scaffold thread (extra)
 

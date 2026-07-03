@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Breeze Smart Purge
+ * Plugin Name: Smart Purge for Breeze Cache
  * Plugin URI: https://pixelparade.co
- * Description: Intelligently purges CPT Archives, Taxonomies, and Custom Page Builder Hubs via Breeze and Cloudflare.
- * Version: 1.1.0
+ * Description: Intelligently purges CPT archives, taxonomies, and page-builder hub pages when content changes in Breeze Cache.
+ * Version: 1.0.0
  * Author: PixelParade LLC
  * Author URI: https://pixelparade.co
  * License: GPL v2 or later
@@ -28,7 +28,7 @@ if (defined('BSP_GITHUB_TOKEN') && BSP_GITHUB_TOKEN && file_exists(__DIR__ . '/i
 function bsp_check_dependencies() {
     if (!defined('BREEZE_VERSION')) {
         add_action('admin_notices', function() {
-            echo '<div class="notice notice-error"><p><strong>Breeze Smart Purge</strong> requires the <a href="https://wordpress.org/plugins/breeze/" target="_blank">Breeze Cache</a> plugin to be active. Please activate it to enable smart purging.</p></div>';
+            echo '<div class="notice notice-error"><p><strong>' . esc_html__('Smart Purge for Breeze Cache', 'breeze-smart-purge') . '</strong> ' . esc_html__('requires the', 'breeze-smart-purge') . ' <a href="https://wordpress.org/plugins/breeze/" target="_blank">Breeze Cache</a> ' . esc_html__('plugin to be active. Please activate it to enable smart purging.', 'breeze-smart-purge') . '</p></div>';
         });
         return false;
     }
@@ -353,7 +353,7 @@ function bsp_display_scan_notice() {
     if ($notice = get_transient('bsp_scan_summary_notice')) {
         ?>
         <div class="notice notice-success is-dismissible">
-            <p><strong>Breeze Smart Purge Activated!</strong> Initial auto-scan complete.</p>
+            <p><strong><?php esc_html_e('Smart Purge for Breeze Cache activated!', 'breeze-smart-purge'); ?></strong> <?php esc_html_e('Initial auto-scan complete.', 'breeze-smart-purge'); ?></p>
             <p style="font-family: monospace; font-size: 13px;"><?php echo nl2br(esc_html($notice)); ?></p>
         </div>
         <?php
@@ -489,8 +489,8 @@ function bsp_get_utility_post_types() {
 add_action('admin_menu', 'bsp_register_settings_page');
 function bsp_register_settings_page() {
     add_options_page(
-        'Breeze Smart Purge',
-        'Breeze Smart Purge', // Changed back per your request
+        __('Smart Purge for Breeze Cache', 'breeze-smart-purge'),
+        __('Smart Purge', 'breeze-smart-purge'),
         'manage_options',
         'breeze-smart-purge',
         'bsp_render_settings_page'
@@ -549,7 +549,7 @@ function bsp_render_settings_page() {
     </style>
 
     <div class="wrap">
-        <h1>Breeze Smart Purge</h1>
+        <h1><?php esc_html_e('Smart Purge for Breeze Cache', 'breeze-smart-purge'); ?></h1>
         <div style="background: #fff; padding: 15px 20px; border-left: 4px solid #2271b1; margin-bottom: 20px; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
             <p style="margin: 0; font-size: 14px;"><strong>The Problem:</strong> By default, Breeze aggressively caches content. When you update a post, it only clears the cache for that specific post. This leaves your important hub pages like: post grids, custom taxonomy archives, and page builder layouts, serving stale content to users.</p>
             <p style="margin: 8px 0 0 0; font-size: 14px;"><strong>The Solution:</strong> This tool acts as a traffic controller. The Auto-Scanner detects which pages are querying specific Post Types, ensuring Breeze safely clears the cache for the parent pages whenever a post is updated.</p>
