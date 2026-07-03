@@ -3,7 +3,7 @@
  * Plugin Name: Breeze Smart Purge
  * Plugin URI: https://pixelparade.co
  * Description: Intelligently purges CPT Archives, Taxonomies, and Custom Page Builder Hubs via Breeze and Cloudflare.
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: PixelParade LLC
  * Author URI: https://pixelparade.co
  * License: GPL v2 or later
@@ -293,6 +293,21 @@ function bsp_get_admin_bar_context_post() {
     return ($post instanceof WP_Post) ? $post : null;
 }
 
+function bsp_prepare_breeze_toolbar_screen() {
+    if (!class_exists('WP_Screen')) {
+        require_once ABSPATH . 'wp-admin/includes/class-wp-screen.php';
+    }
+    if (!function_exists('get_current_screen')) {
+        require_once ABSPATH . 'wp-admin/includes/screen.php';
+    }
+
+    global $current_screen;
+    $saved          = $current_screen;
+    $current_screen = WP_Screen::get('front');
+
+    return $saved;
+}
+
 function bsp_invoke_breeze_admin_bar_menu($wp_admin_bar) {
     if (is_admin() || !bsp_breeze_toolbar_enabled() || !bsp_user_can_use_breeze_toolbar()) {
         return;
@@ -301,9 +316,7 @@ function bsp_invoke_breeze_admin_bar_menu($wp_admin_bar) {
         return;
     }
 
-    global $current_screen;
-    $saved_screen = $current_screen;
-    $current_screen = (object) ['base' => 'index'];
+    $saved_screen = bsp_prepare_breeze_toolbar_screen();
 
     try {
         $ref   = new ReflectionClass('Breeze_Admin');
@@ -311,9 +324,12 @@ function bsp_invoke_breeze_admin_bar_menu($wp_admin_bar) {
         $ref->getMethod('register_admin_bar_menu')->invoke($admin, $wp_admin_bar);
         bsp_fix_breeze_toolbar_purge_hrefs($wp_admin_bar);
     } catch (Throwable $e) {
-        // If Breeze changes its API, avoid taking the site down.
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('BSP breeze admin bar: ' . $e->getMessage());
+        }
         return;
     } finally {
+        global $current_screen;
         $current_screen = $saved_screen;
     }
 }
