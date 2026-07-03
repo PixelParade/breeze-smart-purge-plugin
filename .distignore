@@ -8,4 +8,6 @@ scripts
 README.md
 *.zip
 .gitignore
+.distignore
 includes/github-updater.php
+assets
