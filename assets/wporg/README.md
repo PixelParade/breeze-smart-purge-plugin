@@ -2,6 +2,8 @@
 
 Upload these files to the **SVN `assets/` folder** (not inside `trunk/` or the plugin zip).
 
+The plugin zip also ships copies at `assets/icon-128x128.png` and `assets/icon-256x256.png` (WordPress standard path for Plugins and Updates screens).
+
 | File | Use |
 |------|-----|
 | `icon-128x128.png` | Plugin icon (required) |

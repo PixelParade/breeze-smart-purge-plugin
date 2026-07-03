@@ -3,7 +3,7 @@ Contributors: kevpress88
 Tags: cache, purge, breeze, cloudflare, performance
 Requires at least: 6.0
 Tested up to: 7.0
-Stable tag: 1.1.4
+Stable tag: 1.1.5
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -39,6 +39,11 @@ No. This is an add-on for [Breeze Cache](https://wordpress.org/plugins/breeze/).
 Native Gutenberg blocks, Elementor, Bricks Builder, Beaver Builder, Oxygen (JSON meta), WPBakery, and Divi (shortcode grids). Other builders can use manual URL mappings in the settings screen.
 
 == Changelog ==
+
+= 1.1.5 =
+
+* Updates screen and Plugins list now show the plugin icon (GitHub updater passes icons; standard assets path).
+* GitHub update cache clears when WordPress checks for updates; Refresh update check button on settings screen.
 
 = 1.1.4 =
 

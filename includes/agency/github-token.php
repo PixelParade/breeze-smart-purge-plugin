@@ -183,6 +183,36 @@ function bsp_agency_maybe_save_github_token() {
 add_action('admin_init', 'bsp_agency_maybe_save_github_token');
 
 /**
+ * Settings → Smart Purge: force a fresh GitHub update check.
+ */
+function bsp_agency_maybe_refresh_github_updates() {
+	if (!is_admin() || !current_user_can('manage_options')) {
+		return;
+	}
+	if (empty($_GET['bsp_refresh_github_updates']) || '1' !== $_GET['bsp_refresh_github_updates']) {
+		return;
+	}
+	check_admin_referer('bsp_refresh_github_updates');
+	if (function_exists('bsp_force_github_update_check')) {
+		bsp_force_github_update_check();
+	} else {
+		delete_transient('bsp_github_release');
+		delete_site_transient('update_plugins');
+	}
+	wp_safe_redirect(
+		add_query_arg(
+			array(
+				'page'                     => 'smart-purge-for-breeze-cache',
+				'bsp_github_updates_reset' => '1',
+			),
+			admin_url('options-general.php')
+		)
+	);
+	exit;
+}
+add_action('admin_init', 'bsp_agency_maybe_refresh_github_updates');
+
+/**
  * Settings panel on Smart Purge screen (agency builds only).
  */
 function bsp_agency_render_github_settings_panel() {
@@ -209,11 +239,36 @@ function bsp_agency_render_github_settings_panel() {
 		esc_html_e('GitHub update settings saved.', 'smart-purge-for-breeze-cache');
 		echo '</p></div>';
 	}
+	if (isset($_GET['bsp_github_updates_reset']) && '1' === $_GET['bsp_github_updates_reset']) {
+		echo '<div class="notice notice-success is-dismissible"><p>';
+		esc_html_e('Update cache cleared. Open Dashboard → Updates and click Check Again.', 'smart-purge-for-breeze-cache');
+		echo '</p></div>';
+	}
+
+	$installed_version = function_exists('bsp_get_plugin_version') ? bsp_get_plugin_version() : '';
+	$latest_release    = function_exists('bsp_fetch_latest_github_release') ? bsp_fetch_latest_github_release() : null;
+	$latest_version    = is_array($latest_release) && !empty($latest_release['version']) ? $latest_release['version'] : '';
 	?>
 	<div style="flex: 1; min-width: 300px; background: #fff; padding: 20px; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04); margin-bottom: 20px;">
 		<h3 style="margin-top:0;"><?php esc_html_e('Agency GitHub Updates', 'smart-purge-for-breeze-cache'); ?></h3>
 		<p class="description">
-			<?php esc_html_e('Private GitHub Releases appear under Dashboard → Updates when a token is configured. Tag new releases on GitHub; this site does not read the main branch.', 'smart-purge-for-breeze-cache'); ?>
+			<?php esc_html_e('GitHub Releases drive Dashboard → Updates for this plugin. The public PixelParade repo works without a token; a PAT helps with rate limits and private forks.', 'smart-purge-for-breeze-cache'); ?>
+		</p>
+		<?php if ($installed_version) : ?>
+		<p>
+			<strong><?php esc_html_e('Installed:', 'smart-purge-for-breeze-cache'); ?></strong>
+			<?php echo esc_html($installed_version); ?>
+			<?php if ($latest_version) : ?>
+				&nbsp;|&nbsp;
+				<strong><?php esc_html_e('Latest release:', 'smart-purge-for-breeze-cache'); ?></strong>
+				<?php echo esc_html($latest_version); ?>
+			<?php endif; ?>
+		</p>
+		<?php endif; ?>
+		<p>
+			<a class="button button-secondary" href="<?php echo esc_url(wp_nonce_url(admin_url('options-general.php?page=smart-purge-for-breeze-cache&bsp_refresh_github_updates=1'), 'bsp_refresh_github_updates')); ?>">
+				<?php esc_html_e('Refresh update check', 'smart-purge-for-breeze-cache'); ?>
+			</a>
 		</p>
 		<p>
 			<strong><?php esc_html_e('Status:', 'smart-purge-for-breeze-cache'); ?></strong>
@@ -254,10 +309,10 @@ function bsp_agency_render_github_settings_panel() {
 add_action('bsp_agency_settings_panel', 'bsp_agency_render_github_settings_panel');
 
 /**
- * Notice when agency build has no GitHub credentials.
+ * Notice when agency build cannot reach GitHub Releases (not when token is merely unset on a public repo).
  */
 function bsp_agency_github_token_admin_notice() {
-	if (!current_user_can('manage_options') || bsp_agency_github_token_is_configured()) {
+	if (!current_user_can('manage_options')) {
 		return;
 	}
 
@@ -266,13 +321,26 @@ function bsp_agency_github_token_admin_notice() {
 		return;
 	}
 
+	if (!function_exists('bsp_fetch_latest_github_release')) {
+		return;
+	}
+
+	$release = bsp_fetch_latest_github_release();
+	if ($release && !empty($release['version'])) {
+		return;
+	}
+
 	echo '<div class="notice notice-warning"><p>';
-	printf(
-		/* translators: %s: settings page link */
-		esc_html__('%1$s needs a GitHub token for agency updates. Add BSP_GITHUB_TOKEN to wp-config, set a server env var, or configure it on the %2$s settings screen.', 'smart-purge-for-breeze-cache'),
-		'<strong>Smart Purge for Breeze Cache</strong>',
-		'<a href="' . esc_url(admin_url('options-general.php?page=smart-purge-for-breeze-cache')) . '">Smart Purge</a>'
-	);
+	if (bsp_agency_github_token_is_configured()) {
+		esc_html_e('Smart Purge could not reach GitHub Releases. Check BSP_GITHUB_TOKEN permissions or try Refresh update check on the Smart Purge settings screen.', 'smart-purge-for-breeze-cache');
+	} else {
+		printf(
+			/* translators: %s: settings page link */
+			esc_html__('%1$s could not reach GitHub Releases (rate limit or network). Add a read-only GitHub PAT on the %2$s settings screen, or click Refresh update check there.', 'smart-purge-for-breeze-cache'),
+			'<strong>Smart Purge for Breeze Cache</strong>',
+			'<a href="' . esc_url(admin_url('options-general.php?page=smart-purge-for-breeze-cache')) . '">Smart Purge</a>'
+		);
+	}
 	echo '</p></div>';
 }
 add_action('admin_notices', 'bsp_agency_github_token_admin_notice');

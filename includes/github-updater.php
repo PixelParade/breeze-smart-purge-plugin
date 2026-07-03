@@ -35,7 +35,66 @@ function bsp_github_request_args($args = array()) {
 		$args['headers']['Authorization'] = 'Bearer ' . $token;
 		$args['headers']['Accept']        = 'application/vnd.github+json';
 	}
+	if (empty($args['user-agent'])) {
+		$args['user-agent'] = 'Smart-Purge-for-Breeze-Cache/' . bsp_get_plugin_version() . '; ' . home_url('/');
+	}
 	return $args;
+}
+
+/**
+ * Clear cached GitHub release metadata (e.g. when WordPress re-checks plugin updates).
+ */
+function bsp_clear_github_release_cache() {
+	delete_transient('bsp_github_release');
+}
+
+add_action('delete_site_transient_update_plugins', 'bsp_clear_github_release_cache');
+
+function bsp_get_plugin_version() {
+	static $version = null;
+	if (null !== $version) {
+		return $version;
+	}
+	$main = dirname(__DIR__) . '/smart-purge-for-breeze-cache.php';
+	if (!function_exists('get_plugin_data')) {
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+	}
+	$data    = get_plugin_data($main, false, false);
+	$version = !empty($data['Version']) ? $data['Version'] : '0';
+	return $version;
+}
+
+/**
+ * Plugin icon and banner URLs for the Updates UI and View details modal.
+ *
+ * @return array{icons: array<string, string>, banners: array<string, string>}
+ */
+function bsp_get_plugin_update_assets() {
+	global $bsp_main_plugin;
+
+	$plugin_dir = plugin_dir_path($bsp_main_plugin);
+	if (file_exists($plugin_dir . 'assets/icon-128x128.png')) {
+		$icon_1x_path = 'assets/icon-128x128.png';
+		$icon_2x_path = 'assets/icon-256x256.png';
+	} else {
+		$icon_1x_path = 'assets/wporg/icon-128x128.png';
+		$icon_2x_path = 'assets/wporg/icon-256x256.png';
+	}
+
+	$icon_1x = plugins_url($icon_1x_path, $bsp_main_plugin);
+	$icon_2x = plugins_url($icon_2x_path, $bsp_main_plugin);
+
+	return array(
+		'icons'   => array(
+			'1x'      => $icon_1x,
+			'2x'      => $icon_2x,
+			'default' => $icon_1x,
+		),
+		'banners' => array(
+			'low'  => plugins_url('assets/wporg/banner-772x250.png', $bsp_main_plugin),
+			'high' => plugins_url('assets/wporg/banner-1544x500.png', $bsp_main_plugin),
+		),
+	);
 }
 
 function bsp_is_github_package_url($url) {
@@ -52,13 +111,13 @@ function bsp_fetch_latest_github_release() {
 	$response = wp_remote_get($url, bsp_github_request_args(array('timeout' => 15)));
 
 	if (is_wp_error($response) || 200 !== (int) wp_remote_retrieve_response_code($response)) {
-		set_transient('bsp_github_release', '', HOUR_IN_SECONDS);
+		set_transient('bsp_github_release', '', 15 * MINUTE_IN_SECONDS);
 		return null;
 	}
 
 	$data = json_decode(wp_remote_retrieve_body($response), true);
 	if (empty($data['tag_name'])) {
-		set_transient('bsp_github_release', '', HOUR_IN_SECONDS);
+		set_transient('bsp_github_release', '', 15 * MINUTE_IN_SECONDS);
 		return null;
 	}
 
@@ -84,8 +143,16 @@ function bsp_fetch_latest_github_release() {
 		'notes'   => !empty($data['body']) ? $data['body'] : '',
 	);
 
-	set_transient('bsp_github_release', $release, 12 * HOUR_IN_SECONDS);
+	set_transient('bsp_github_release', $release, HOUR_IN_SECONDS);
 	return $release;
+}
+
+/**
+ * Force WordPress to re-query GitHub Releases on the next update check.
+ */
+function bsp_force_github_update_check() {
+	bsp_clear_github_release_cache();
+	delete_site_transient('update_plugins');
 }
 
 function bsp_pre_set_github_plugin_update($transient) {
@@ -103,12 +170,16 @@ function bsp_pre_set_github_plugin_update($transient) {
 		return $transient;
 	}
 
+	$assets = bsp_get_plugin_update_assets();
+
 	$update = (object) array(
 		'slug'         => 'smart-purge-for-breeze-cache',
 		'plugin'       => $plugin_file,
 		'new_version'  => $release['version'],
 		'url'          => $release['url'],
 		'package'      => $release['package'],
+		'icons'        => $assets['icons'],
+		'banners'      => $assets['banners'],
 		'tested'       => get_bloginfo('version'),
 		'requires'     => '6.0',
 		'requires_php' => '7.4',
@@ -136,6 +207,8 @@ function bsp_plugins_api_github_info($result, $action, $args) {
 		return $result;
 	}
 
+	$assets = bsp_get_plugin_update_assets();
+
 	return (object) array(
 		'name'          => 'Smart Purge for Breeze Cache',
 		'slug'          => 'smart-purge-for-breeze-cache',
@@ -145,6 +218,8 @@ function bsp_plugins_api_github_info($result, $action, $args) {
 		'requires'      => '6.0',
 		'requires_php'  => '7.4',
 		'download_link' => $release['package'],
+		'icons'         => $assets['icons'],
+		'banners'       => $assets['banners'],
 		'sections'      => array(
 			'description' => 'Intelligently purges CPT archives, taxonomies, and page-builder hub pages via Breeze and Cloudflare.',
 			'changelog'   => !empty($release['notes']) ? wp_kses_post($release['notes']) : '',
