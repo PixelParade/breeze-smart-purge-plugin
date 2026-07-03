@@ -123,6 +123,13 @@ The repo is **public**. Use **MainWP Favorites** with a **direct zip download UR
    ```
 
 4. Name it e.g. `Smart Purge for Breeze Cache (agency)` → **Save**.
+5. **Favorites icon (custom plugin):** MainWP cannot fetch icons from wordpress.org for agency builds. Copy `scripts/pp-mainwp-favorites-smart-purge-icon.php` to `wp-content/mu-plugins/` on **mainwp.pixelparade.co**, then open **Favorites** and click **Update Version Info** on the Smart Purge row. Icons are also bundled in the zip at `assets/icon-128x128.png` (v1.1.5+).
+
+   Stable icon URLs (also attached to every GitHub Release since v1.1.6):
+
+   ```
+   https://github.com/PixelParade/breeze-smart-purge-plugin/releases/latest/download/icon-128x128.png
+   ```
 
 **If you get `Extraction failed: Incompatible Archive` on the GitHub URL** (known MainWP Favorites quirk with some external URLs — the zip itself is fine):
 

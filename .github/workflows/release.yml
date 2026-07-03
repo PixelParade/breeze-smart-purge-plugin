@@ -34,6 +34,8 @@ jobs:
           files: |
             ${{ env.AGENCY_ZIP }}
             ${{ env.WPORG_ZIP }}
+            assets/icon-128x128.png
+            assets/icon-256x256.png
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -41,7 +43,8 @@ jobs:
       - name: Release summary
         run: |
           echo "Agency asset (MainWP / BSP_GITHUB_TOKEN): ${{ env.AGENCY_ZIP }}"
-          echo "  Includes: includes/github-updater.php, includes/agency/"
+          echo "  Includes: includes/github-updater.php, includes/agency/, assets/icon-*.png"
+          echo "  Favorites icon URLs: releases/latest/download/icon-128x128.png"
           echo "wordpress.org asset (SVN — manual upload): ${{ env.WPORG_ZIP }}"
           echo "  Excludes updater and agency-only code (.distignore.wporg)"
           echo "Release URL: ${{ steps.gh_release.outputs.url }}"
