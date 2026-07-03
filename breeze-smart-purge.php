@@ -6,7 +6,7 @@
  * Author: PixelParade LLC
  * Author URI: https://pixelparade.co
  * License: GPL v2 or later
- * Text Domain: breeze-smart-purge
+ * Text Domain: smart-purge-for-breeze-cache
  * Requires Plugins: breeze
  */
 
@@ -27,7 +27,7 @@ if (defined('BSP_GITHUB_TOKEN') && BSP_GITHUB_TOKEN && file_exists(__DIR__ . '/i
 function bsp_check_dependencies() {
     if (!defined('BREEZE_VERSION')) {
         add_action('admin_notices', function() {
-            echo '<div class="notice notice-error"><p><strong>' . esc_html__('Smart Purge for Breeze Cache', 'breeze-smart-purge') . '</strong> ' . esc_html__('requires the', 'breeze-smart-purge') . ' <a href="https://wordpress.org/plugins/breeze/" target="_blank">Breeze Cache</a> ' . esc_html__('plugin to be active. Please activate it to enable smart purging.', 'breeze-smart-purge') . '</p></div>';
+            echo '<div class="notice notice-error"><p><strong>' . esc_html__('Smart Purge for Breeze Cache', 'smart-purge-for-breeze-cache') . '</strong> ' . esc_html__('requires the', 'smart-purge-for-breeze-cache') . ' <a href="https://wordpress.org/plugins/breeze/" target="_blank">Breeze Cache</a> ' . esc_html__('plugin to be active. Please activate it to enable smart purging.', 'smart-purge-for-breeze-cache') . '</p></div>';
         });
         return false;
     }
@@ -37,7 +37,7 @@ function bsp_check_dependencies() {
 // Add link to the Plugins page
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'bsp_add_settings_link');
 function bsp_add_settings_link($links) {
-    $settings_link = '<a href="options-general.php?page=breeze-smart-purge">' . __('Settings', 'breeze-smart-purge') . '</a>';
+    $settings_link = '<a href="options-general.php?page=smart-purge-for-breeze-cache">' . __('Settings', 'smart-purge-for-breeze-cache') . '</a>';
     array_unshift($links, $settings_link);
     return $links;
 }
@@ -198,7 +198,7 @@ function bsp_register_breeze_admin_bar_items($wp_admin_bar) {
             $wp_admin_bar->add_node([
                 'id'     => 'breeze-clear-this-page',
                 'parent' => 'breeze-topbar',
-                'title'  => __('Clear cache for this page', 'breeze-smart-purge'),
+                'title'  => __('Clear cache for this page', 'smart-purge-for-breeze-cache'),
                 'href'   => $clear_url,
                 'meta'   => ['class' => 'breeze-toolbar-group'],
             ]);
@@ -209,8 +209,8 @@ function bsp_register_breeze_admin_bar_items($wp_admin_bar) {
         $wp_admin_bar->add_node([
             'id'     => 'breeze-smart-purge-link',
             'parent' => 'breeze-topbar',
-            'title'  => __('Smart Purge Settings', 'breeze-smart-purge'),
-            'href'   => admin_url('options-general.php?page=breeze-smart-purge'),
+            'title'  => __('Smart Purge Settings', 'smart-purge-for-breeze-cache'),
+            'href'   => admin_url('options-general.php?page=smart-purge-for-breeze-cache'),
             'meta'   => ['class' => 'breeze-toolbar-group'],
         ]);
     }
@@ -323,7 +323,7 @@ function bsp_frontend_cache_cleared_notice() {
         return;
     }
     echo '<div class="notice notice-success" style="position:fixed;bottom:20px;right:20px;z-index:99999;padding:12px 16px;background:#fff;border-left:4px solid #46b450;box-shadow:0 2px 8px rgba(0,0,0,.15);">'
-        . esc_html__('Cache has been purged.', 'breeze-smart-purge')
+        . esc_html__('Cache has been purged.', 'smart-purge-for-breeze-cache')
         . '</div>';
 }
 
@@ -352,7 +352,7 @@ function bsp_display_scan_notice() {
     if ($notice = get_transient('bsp_scan_summary_notice')) {
         ?>
         <div class="notice notice-success is-dismissible">
-            <p><strong><?php esc_html_e('Smart Purge for Breeze Cache activated!', 'breeze-smart-purge'); ?></strong> <?php esc_html_e('Initial auto-scan complete.', 'breeze-smart-purge'); ?></p>
+            <p><strong><?php esc_html_e('Smart Purge for Breeze Cache activated!', 'smart-purge-for-breeze-cache'); ?></strong> <?php esc_html_e('Initial auto-scan complete.', 'smart-purge-for-breeze-cache'); ?></p>
             <p style="font-family: monospace; font-size: 13px;"><?php echo nl2br(esc_html($notice)); ?></p>
         </div>
         <?php
@@ -488,10 +488,10 @@ function bsp_get_utility_post_types() {
 add_action('admin_menu', 'bsp_register_settings_page');
 function bsp_register_settings_page() {
     add_options_page(
-        __('Smart Purge for Breeze Cache', 'breeze-smart-purge'),
-        __('Smart Purge', 'breeze-smart-purge'),
+        __('Smart Purge for Breeze Cache', 'smart-purge-for-breeze-cache'),
+        __('Smart Purge', 'smart-purge-for-breeze-cache'),
         'manage_options',
-        'breeze-smart-purge',
+        'smart-purge-for-breeze-cache',
         'bsp_render_settings_page'
     );
 }
@@ -548,7 +548,7 @@ function bsp_render_settings_page() {
     </style>
 
     <div class="wrap">
-        <h1><?php esc_html_e('Smart Purge for Breeze Cache', 'breeze-smart-purge'); ?></h1>
+        <h1><?php esc_html_e('Smart Purge for Breeze Cache', 'smart-purge-for-breeze-cache'); ?></h1>
         <div style="background: #fff; padding: 15px 20px; border-left: 4px solid #2271b1; margin-bottom: 20px; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
             <p style="margin: 0; font-size: 14px;"><strong>The Problem:</strong> By default, Breeze aggressively caches content. When you update a post, it only clears the cache for that specific post. This leaves your important hub pages like: post grids, custom taxonomy archives, and page builder layouts, serving stale content to users.</p>
             <p style="margin: 8px 0 0 0; font-size: 14px;"><strong>The Solution:</strong> This tool acts as a traffic controller. The Auto-Scanner detects which pages are querying specific Post Types, ensuring Breeze safely clears the cache for the parent pages whenever a post is updated.</p>

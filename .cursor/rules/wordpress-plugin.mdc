@@ -11,7 +11,7 @@ alwaysApply: true
 
 - **Plugin name:** Smart Purge for Breeze Cache
 - **Slug / folder:** `breeze-smart-purge`
-- **Text domain:** `breeze-smart-purge`
+- **Text domain:** `smart-purge-for-breeze-cache` (matches wordpress.org slug; dev folder remains `breeze-smart-purge`)
 - **Main file:** `breeze-smart-purge.php` (single-file plugin — all logic lives here)
 - **Version:** bump in plugin header only (no separate version constant)
 
