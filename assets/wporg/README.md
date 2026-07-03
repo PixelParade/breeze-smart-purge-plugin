@@ -13,7 +13,7 @@ Upload these files to the **SVN `assets/` folder** (not inside `trunk/` or the p
 
 Derived from the official [Breeze Cache](https://wordpress.org/plugins/breeze/) wordpress.org artwork (cyan sky, wave landscape, breeze-line typography):
 
-- **Icon:** Breeze-style blue circle with breeze-line **B** + orange refresh badge (purge add-on).
+- **Icon:** Breeze-style rounded square — blue gradient, browser + speedometer gauge (per official Breeze icon), orange refresh badge for purge add-on.
 - **Banner:** Same layout as Breeze banner — **SMART PURGE** / *for Breeze Cache* with refresh motion graphic.
 
 This is an **unofficial add-on** — not Cloudways branding. Do not reuse Breeze assets verbatim on the directory page; use only the files in this folder.
