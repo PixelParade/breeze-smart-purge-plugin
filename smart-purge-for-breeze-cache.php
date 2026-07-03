@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Smart Purge for Breeze Cache
  * Description: Intelligently purges CPT archives, taxonomies, and page-builder hub pages when content changes in Breeze Cache.
- * Version: 1.1.9
+ * Version: 1.1.10
  * Author: PixelParade LLC
  * Author URI: https://pixelparade.co
  * License: GPL v2 or later
@@ -33,7 +33,7 @@ if (file_exists($bsp_scanner_detection)) {
 add_action('admin_enqueue_scripts', 'bsp_enqueue_admin_plugin_asset_styles');
 
 /**
- * object-fit: cover for plugin icon/banner on Updates, Plugins, and View details screens.
+ * object-fit: contain for plugin icon/banner on Updates, Plugins, and View details screens.
  *
  * @param string $hook_suffix Current admin screen hook.
  */

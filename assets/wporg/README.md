@@ -28,7 +28,7 @@ Derived from the official [Breeze Cache](https://wordpress.org/plugins/breeze/) 
 | `banner-772x250.png` | 772 × 250 |
 | `banner-1544x500.png` | 1544 × 500 |
 
-Regenerate `icon-256x256` from `icon-128x128` and `banner-1544x500` from `banner-772x250` — do not export both from a shared 3:2 master without cropping.
+Regenerate `icon-256x256` and `icon-512x512` from the padded `icon-128x128.png` (do not scale edge-to-edge artwork to fill the canvas).
 
 This is an **unofficial add-on** — not Cloudways branding. Do not reuse Breeze assets verbatim on the directory page; use only the files in this folder.
 
