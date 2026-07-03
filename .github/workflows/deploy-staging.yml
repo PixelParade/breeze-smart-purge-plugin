@@ -7,8 +7,6 @@ on:
 
 env:
   PLUGIN_SLUG: breeze-smart-purge
-  STAGING_APP_ID: tyaxssmjcp
-  # Application SSH user (cursor-user) — paths relative to its home; cannot write /tmp
   STAGING_REMOTE_PLUGIN_PATH: public_html/wp-content/plugins/breeze-smart-purge
 
 jobs:

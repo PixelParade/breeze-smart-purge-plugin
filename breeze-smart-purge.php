@@ -662,6 +662,15 @@ function bsp_render_settings_page() {
     <script>
     document.addEventListener("DOMContentLoaded", function() {
         // Universal Toast Function
+        function bspEscapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         function bspShowToast(msg, type = 'success') {
             var toast = document.getElementById("bsp-toast");
             toast.textContent = msg;
@@ -673,11 +682,11 @@ function bsp_render_settings_page() {
         document.getElementById('bsp-btn-scan').addEventListener('click', function() {
             var btn = this;
             var logText = document.getElementById('bsp-scan-log-text');
-            var originalBtnText = btn.innerHTML;
+            var originalBtnText = btn.textContent;
             
-            btn.innerHTML = 'Scanning...';
+            btn.textContent = 'Scanning...';
             btn.style.pointerEvents = 'none';
-            logText.innerHTML = 'Scanning in progress... this may take a few seconds.';
+            logText.textContent = 'Scanning in progress... this may take a few seconds.';
 
             var data = new FormData();
             data.append('action', 'bsp_run_ajax_scan');
@@ -687,8 +696,7 @@ function bsp_render_settings_page() {
             .then(response => response.json())
             .then(res => {
                 if(res.success) {
-                    // Update Log
-                    logText.innerHTML = res.data.log.replace(/\n/g, "<br>");
+                    logText.innerHTML = bspEscapeHtml(res.data.log).replace(/\n/g, '<br>');
                     // Clear all readonly boxes, then repopulate
                     document.querySelectorAll('textarea[id^="scanned-map-"]').forEach(ta => ta.value = '[No pages auto-detected]');
                     for (const [postType, urls] of Object.entries(res.data.map)) {
@@ -700,11 +708,11 @@ function bsp_render_settings_page() {
                     logText.innerHTML = '<span style="color:red;">Scan failed. Please refresh and try again.</span>';
                     bspShowToast('Scan failed.', 'error');
                 }
-                btn.innerHTML = originalBtnText;
+                btn.textContent = originalBtnText;
                 btn.style.pointerEvents = 'auto';
             }).catch(err => {
                 bspShowToast('Server error.', 'error');
-                btn.innerHTML = originalBtnText;
+                btn.textContent = originalBtnText;
                 btn.style.pointerEvents = 'auto';
             });
         });
@@ -713,9 +721,9 @@ function bsp_render_settings_page() {
         document.querySelectorAll('.bsp-btn-save').forEach(btn => {
             btn.addEventListener('click', function() {
                 var currentBtn = this;
-                var originalBtnText = currentBtn.innerHTML;
+                var originalBtnText = currentBtn.textContent;
                 
-                currentBtn.innerHTML = 'Saving...';
+                currentBtn.textContent = 'Saving...';
                 currentBtn.style.pointerEvents = 'none';
 
                 var form = document.getElementById('bsp-settings-form');
@@ -730,11 +738,11 @@ function bsp_render_settings_page() {
                     } else {
                         bspShowToast('Error saving settings.', 'error');
                     }
-                    currentBtn.innerHTML = originalBtnText;
+                    currentBtn.textContent = originalBtnText;
                     currentBtn.style.pointerEvents = 'auto';
                 }).catch(err => {
                     bspShowToast('Server error.', 'error');
-                    currentBtn.innerHTML = originalBtnText;
+                    currentBtn.textContent = originalBtnText;
                     currentBtn.style.pointerEvents = 'auto';
                 });
             });
@@ -863,7 +871,7 @@ function bsp_ajax_scan_handler() {
     update_option('bsp_scan_log', $log, false);
     
     wp_send_json_success([
-        'log' => $log,
+        'log' => esc_html($log),
         'map' => get_option('bsp_scanned_map', [])
     ]);
 }

@@ -39,13 +39,13 @@ If org commands return **404** or empty orgs, your PAT is not authorized for **P
 3. **Repository access:** `breeze-smart-purge-plugin` or all org repos
 4. **Permissions:** Contents, Metadata, Actions, Administration (for invites/secrets)
 5. [Org approve](https://github.com/organizations/PixelParade/settings/personal-access-tokens)
-6. `gh auth login --with-token` → update `GITHUB_PERSONAL_ACCESS_TOKEN` → restart Cursor
+6. `gh auth login --with-token` → update `GITHUB_PERSONAL_ACCESS_TOKEN` → restart your terminal / IDE session
 
 `git push` may work before `gh`/MCP do — they use different credentials until PAT is fixed.
 
-## GitHub MCP + `gh`
+## GitHub CLI
 
-Set Windows user env var `GITHUB_PERSONAL_ACCESS_TOKEN` with a fine-grained PAT that has **PixelParade** org access. Restart Cursor after updating.
+Set Windows user env var `GITHUB_PERSONAL_ACCESS_TOKEN` with a fine-grained PAT that has **PixelParade** org access. Restart your terminal after updating.
 
 ```powershell
 gh auth login --with-token   # paste token, Enter, Ctrl+Z
@@ -90,7 +90,7 @@ Or set manually on **PixelParade/breeze-smart-purge-plugin → Settings → Secr
 | Secret | Value |
 |--------|-------|
 | `STAGING_SSH_HOST` | `45.76.227.59` |
-| `STAGING_SSH_USER` | `cursor-user` |
+| `STAGING_SSH_USER` | Application SSH user from Cloudways |
 | `STAGING_SSH_KEY` | Contents of `%USERPROFILE%\.ssh\breeze-smart-purge-deploy` (private key) |
 
 `STAGING_APP_ID=tyaxssmjcp` is in `.github/workflows/deploy-staging.yml`.

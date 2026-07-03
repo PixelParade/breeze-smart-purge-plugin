@@ -1,15 +1,15 @@
 ---
-description: WordPress plugin conventions for Breeze Smart Purge
+description: WordPress plugin conventions for Smart Purge for Breeze Cache
 globs:
   - "**/*.php"
 alwaysApply: true
 ---
 
-# Breeze Smart Purge — WordPress Plugin
+# Smart Purge for Breeze Cache — WordPress Plugin
 
 ## Identity
 
-- **Plugin name:** Breeze Smart Purge
+- **Plugin name:** Smart Purge for Breeze Cache
 - **Slug / folder:** `breeze-smart-purge`
 - **Text domain:** `breeze-smart-purge`
 - **Main file:** `breeze-smart-purge.php` (single-file plugin — all logic lives here)
@@ -17,10 +17,10 @@ alwaysApply: true
 
 ## Architecture
 
-- **Single-file plugin:** `breeze-smart-purge.php` + `readme.txt` only — no `includes/`, no bootstrap class loader
+- **Core:** `breeze-smart-purge.php` + `readme.txt`; optional `includes/github-updater.php` for private GitHub updates only (excluded from wp.org zip)
 - **Function prefix:** `bsp_` for all functions, AJAX actions, and hooks
 - **Options prefix:** `bsp_` (e.g. `bsp_settings`, `bsp_scanned_map`, `bsp_manual_map`)
-- **Dependency:** requires active Breeze Cache plugin (`BREEZE_VERSION` defined)
+- **Dependency:** requires active Breeze Cache plugin (`BREEZE_VERSION` defined; `Requires Plugins: breeze`)
 
 ## Coding standards
 
@@ -32,24 +32,22 @@ alwaysApply: true
 
 ## Environments
 
-- **Staging:** `breeze-smart-purge.pixelparade.dev` via Novamira MCP (`novamira-breeze-smart-pur` in project `.cursor/mcp.json` only — never global)
-- **Production:** deploy via GitHub release tags + MainWP bulk update
-
-See `.cursor/rules/novamira-mcp-safety.mdc` for mandatory site-binding checks before any MCP call.
+- **Staging:** `breeze-smart-purge.pixelparade.dev` — see [docs/ACCESS.md](docs/ACCESS.md)
+- **Clients:** GitHub release tags + MainWP; wordpress.org SVN when listed
 
 ## Secrets
 
 - Never commit API keys, SSH keys, application passwords, or `.env` files
-- GitHub Actions secrets: `STAGING_SSH_HOST`, `STAGING_SSH_USER`, `STAGING_SSH_KEY`
+- GitHub Actions secrets: `STAGING_SSH_HOST`, `STAGING_SSH_USER`, `STAGING_SSH_KEY` (preferred) or `STAGING_SSH_PASSWORD`
 
 ## Dev workflow
 
 1. Edit `breeze-smart-purge.php` locally (source of truth)
 2. Push to `main` → GitHub Actions deploys to staging
-3. Test on staging via Novamira MCP (`list-directory`, `read-file`, `run-wp-cli`)
+3. Test on staging (WP-CLI + browser)
 4. Tag `v*` release → GitHub Release zip → MainWP rollout to client sites
 
 ## Site access
 
-- **Novamira MCP** — WordPress-aware reads/writes (project `.cursor/mcp.json` only). See [docs/ACCESS.md](docs/ACCESS.md).
-- **SSH** — bulk pull/deploy via `.env.deploy.local` + `scripts/pull-from-staging.ps1` or GitHub Actions.
+- **Remote WP API** — project `.cursor/mcp.json` only (gitignored). See [docs/ACCESS.md](docs/ACCESS.md).
+- **SSH** — `.env.deploy.local` + `scripts/pull-from-staging.ps1` or GitHub Actions.

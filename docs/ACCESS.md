@@ -1,87 +1,73 @@
-# Site access: Novamira MCP vs SSH
+# Site access
 
-Use **both**, for different jobs. Do not put either credential set in git.
+Use **SSH** for filesystem deploys and **WordPress REST / remote tools** for in-app reads. Never commit credentials to git.
 
-## Novamira MCP (WordPress-aware)
+## WordPress remote API (staging)
 
-**Config:** `.cursor/mcp.json` → `novamira-breeze-smart-pur`
+**Config:** `.cursor/mcp.json` from `.cursor/mcp.json.example` (gitignored when it contains secrets).
 
 | Good for | Examples |
 |----------|----------|
-| Reading plugin source on the server | `list-directory`, `read-file` |
-| Inspecting site context | `discover-abilities`, installed plugins |
-| Targeted WP operations | options, posts, diagnostics via abilities |
-| Safe agent workflows | hostname checks in `.cursor/rules/novamira-mcp-safety.mdc` |
+| Reading plugin source on the server | list directory, read file |
+| Inspecting site context | installed plugins, options |
+| Targeted WP operations | WP-CLI via approved abilities |
 
-**Not good for:** bulk full-tree sync, CI deploy, or when MCP session is disconnected.
+**Not good for:** bulk full-tree sync or production mutations without review.
 
-Reload after config changes: **Cursor → Settings → MCP → reload** `novamira-breeze-smart-pur`.
+Hostname must be `breeze-smart-purge.pixelparade.dev` before any staging operation. See `.cursor/rules/novamira-mcp-safety.mdc`.
 
-## SSH / SFTP (filesystem)
+## SSH / SFTP
 
 **Config:** `.env.deploy.local` (copy from `.env.deploy.example`)
 
 | Good for | Examples |
 |----------|----------|
-| Pull entire plugin folder locally | `scripts/pull-from-staging.ps1` |
-| Push local changes to staging | rsync/scp before CI is wired |
-| GitHub Actions deploy | SSH **key** in repo secrets (preferred over password) |
-| WP-CLI on server | `wp plugin list` when proc_open allows |
-
-**Not good for:** WordPress data model work (use Novamira abilities instead).
+| Pull plugin folder locally | `scripts/pull-from-staging.ps1` |
+| Emergency hotfix to staging | `scp` / `pscp` to plugin path |
+| GitHub Actions deploy | secrets below |
+| WP-CLI on server | `wp plugin list` |
 
 ## GitHub Actions secrets
 
-For automated deploy, use an SSH **key**, not the cursor-user password:
+Preferred: **SSH key** deploy (see `scripts/setup-github-secrets.ps1`).
 
-- `STAGING_SSH_HOST` — `45.76.227.59`
-- `STAGING_SSH_USER` — `cursor-user` or deploy key user
-- `STAGING_SSH_KEY` — private key (add public key to server)
+| Secret | Purpose |
+|--------|---------|
+| `STAGING_SSH_HOST` | Staging server host |
+| `STAGING_SSH_USER` | Application SSH user |
+| `STAGING_SSH_KEY` | Private deploy key (preferred) |
+| `STAGING_SSH_PASSWORD` | Fallback only — rotate if exposed |
 
-Set `STAGING_APP_ID=tyaxssmjcp` in `.github/workflows/deploy-staging.yml`.
+Current workflow deploys `breeze-smart-purge.php` and `readme.txt` to `public_html/wp-content/plugins/breeze-smart-purge/`.
 
-## WordPress plugin updates (GitHub Releases)
+## Private-repo plugin updates
 
-The plugin checks GitHub Releases for newer versions and surfaces **Dashboard → Plugins → Update available**.
-
-| Site | Primary update path |
-|------|---------------------|
-| Staging | Push to `main` (CI rsync) for dev; tag releases to test WP update UI |
-| Client sites | Tag `v*` → MainWP or native WP Updates |
-
-While the org repo is **private**, add to `wp-config.php` on each site:
+While the GitHub org repo is private, client sites may define in `wp-config.php`:
 
 ```php
 define( 'BSP_GITHUB_TOKEN', 'your-read-only-github-pat' );
 ```
 
-Template: [wp-config-github-updates.example.php](wp-config-github-updates.example.php). Full checklist: [GITHUB_SETUP.md](GITHUB_SETUP.md).
+Template: [wp-config-github-updates.example.php](wp-config-github-updates.example.php). Not used on wordpress.org builds.
 
 ## Security
 
-- Novamira app passwords and SSH passwords stay in **gitignored** local files only.
-- Never add Novamira WordPress MCP to global `~/.cursor/mcp.json`.
-- Rotate any credential shared in chat or tickets.
+- Application passwords, SSH passwords, and PATs belong in **gitignored** local files or GitHub Actions secrets only.
+- Rotate any credential that may have been shared outside the team password manager.
+- Do not duplicate staging MCP config into a global IDE config with production credentials.
 
-## Verify deploys and read errors
-
-After pushing to `main` or any hotfix, confirm the site is alive — not only that GitHub Actions passed.
+## Verify deploys
 
 ```powershell
-# From .env.deploy.local credentials via plink:
 cd public_html && wp plugin list | grep breeze-smart-purge
 grep 'Version:' wp-content/plugins/breeze-smart-purge/breeze-smart-purge.php
 ```
 
 | Log / check | Location |
 |-------------|----------|
-| PHP parse/fatal (fastest) | `wp plugin list` or any `wp` command |
-| WordPress debug | `wp-content/debug.log` (requires `WP_DEBUG_LOG`; often off) |
-| Server | `../logs/*error.log`, `../logs/php-app*.log` relative to `public_html` |
+| PHP parse/fatal (fastest) | `wp plugin list` |
+| WordPress debug | `wp-content/debug.log` (if `WP_DEBUG_LOG`) |
+| Server | `../logs/*error.log` relative to `public_html` |
 | CI | `gh run view <run-id> --log-failed` |
 
-For UI features (admin bar, settings screens), verify in the browser while logged in.
-
-Emergency rollback: `pscp` fixed files to `public_html/wp-content/plugins/breeze-smart-purge/` without waiting for CI.
-
-Agent-facing checklist: `.cursor/rules/ops-lessons.mdc`.
+Operational notes: `.cursor/rules/ops-lessons.mdc`.

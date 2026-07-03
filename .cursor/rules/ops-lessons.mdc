@@ -1,70 +1,51 @@
 ---
-description: Lessons from scaffold, deploy, staging incidents, and WP.org prep
+description: Operational runbook for Smart Purge for Breeze Cache
 alwaysApply: true
 ---
 
-# Ops lessons — Breeze Smart Purge
+# Ops runbook — Smart Purge for Breeze Cache
 
-## Project setup (scaffold thread)
+## Repos and lanes
 
-- **One repo, one folder:** `C:\Users\kevin\Projects\breeze-smart-purge-plugin` only. Delete ignore `pixelparade-wp-plugin` stub; Cursor sidebar duplicates are old agent sessions, not second projects.
-- **Canonical GitHub:** `PixelParade/breeze-smart-purge-plugin` (org). Personal repo is legacy; do not fork workflow across two remotes.
-- **Novamira MCP:** project `.cursor/mcp.json` only — never global `~/.cursor/mcp.json`. Hostname must be `breeze-smart-purge.pixelparade.dev` before any MCP call.
-- **Do not put plugin code in** `novamira-playground` — that repo is Figma/Bricks command center.
-- **Two deploy lanes:** `main` push → staging CI; tag `v*` → GitHub Release zip → MainWP / WP Updates on clients.
+- **Canonical repo:** `PixelParade/breeze-smart-purge-plugin` at `breeze-smart-purge-plugin/`.
+- **Staging:** `breeze-smart-purge.pixelparade.dev` — verify hostname before remote changes.
+- **Two lanes:** `main` → staging CI; tag `v*` → GitHub Release → MainWP / WP Updates. wordpress.org uses SVN separately (`docs/WPORG_SUBMISSION.md`).
 
-## After every deploy or big PHP change
+## After every deploy or significant PHP change
 
-1. `cd public_html && wp plugin list | grep breeze-smart-purge` — parse/fatal errors show here first.
-2. Homepage + wp-admin must not show critical-error screen.
-3. **Browser check** for UI (admin bar, settings) while logged in.
-4. `grep 'Version:' …/breeze-smart-purge.php` on server.
+1. `cd public_html && wp plugin list | grep breeze-smart-purge`
+2. Homepage and wp-admin load without critical error.
+3. Browser check: settings screen and Breeze toolbar while logged in.
+4. Confirm `Version:` in deployed `breeze-smart-purge.php`.
 
-If site is down: **SCP hotfix** to `public_html/wp-content/plugins/breeze-smart-purge/` immediately; do not wait for CI.
+Emergency hotfix: SCP to `public_html/wp-content/plugins/breeze-smart-purge/` without waiting for CI.
 
-## Error logs (staging Cloudways)
+## Logs (staging)
 
-| Source | Path / command |
+| Source | Command / path |
 |--------|----------------|
-| WP-CLI | `wp plugin list` (fastest) |
-| WP debug | `wp-content/debug.log` (only if `WP_DEBUG_LOG`; usually off) |
-| Server | `../logs/*error.log`, `php-app*.log` |
+| WP-CLI | `wp plugin list` |
+| WP debug | `wp-content/debug.log` |
+| Server | `../logs/*error.log` |
 | CI | `gh run view <id> --log-failed` |
 
-## Staging deploy (GitHub Actions)
+## Staging deploy
 
-- **User:** `cursor-user` — cannot write `/tmp` or home root; SCP to `public_html/wp-content/plugins/breeze-smart-purge/` only.
-- **Master SSH keys** on Cloudways ≠ `cursor-user` keys; CI uses password SCP (`STAGING_SSH_PASSWORD`).
-- **Cloudways Git deploy** uses its own SSH key + optional API pull; different from Actions SCP.
-- **Novamira MCP** for WP-aware reads; SSH/pscp for bulk file sync.
+- Application SSH user cannot write `/tmp`; SCP directly to plugin path.
+- Cloudways master keys may not match application user keys; Actions may use password or deploy key per `docs/ACCESS.md`.
+- Pull script: `scripts/pull-from-staging.ps1` (pscp, then plink fallback).
 
-## GitHub / auth
+## PHP / Breeze integration
 
-- `gh auth login --web` when fine-grained PAT lacks org access.
-- Authorize PAT for **PixelParade** org; `gh api user/orgs` should list it.
-- Never commit `.env.deploy.local`, `.cursor/mcp.json`, or tokens pasted in chat.
+- jQuery `$()` inside double-quoted PHP strings causes parse errors — use single-quoted PHP strings.
+- Frontend toolbar: delegate to `Breeze_Admin::register_admin_bar_menu`; load `WP_Screen` before invoke.
+- Do not call Breeze `load_admin_scripts` on frontend without a valid screen.
 
-## PHP / WordPress pitfalls
+## wordpress.org
 
-- **jQuery in PHP strings:** `$('…')` inside `"…"` → parse error. Use single-quoted PHP strings.
-- **Frontend Breeze toolbar:** delegate via `Breeze_Admin::register_admin_bar_menu` (reflection); BSP adds only Smart Purge items. Load `class-wp-screen.php` + `screen.php`; set `WP_Screen::get('front')` before invoke. Never `stdClass` stub (`is_admin()` fatals).
-- **Silent try/catch** hid toolbar failure — always verify with WP-CLI or browser after delegate changes.
-- **Breeze `load_admin_scripts`** on frontend fatals when `get_current_screen()` is null — enqueue Breeze JS manually on frontend only.
-
-## WP.org submission
-
-- **Display name:** Smart Purge for Breeze Cache. **First wp.org release:** `1.0.0` (private GitHub `v1.0.x`–`v1.1.x` were pre-directory beta).
-- Apply at [wordpress.org/plugins/developers/add/](https://wordpress.org/plugins/developers/add/); prefer slug `smart-purge-for-breeze-cache` if available.
-- Security: [WordPress Security APIs](https://developer.wordpress.org/apis/security/) — nonces, caps, sanitize/escape; full checklist in `docs/WPORG_SUBMISSION.md`.
-
-## Scaffold thread (extra)
-
-- Windows `scp` without PuTTY hangs on password — use `plink`/`pscp` or Novamira MCP `read-file` to pull plugin source.
-- `scripts/pull-from-staging.ps1`: tries `pscp`, falls back to plink `cat` + base64.
-- Staging plugin is **single-file** (`breeze-smart-purge.php` + `readme.txt`); delete any `includes/` scaffold from initial template unless adding optional files (e.g. github-updater).
-- GitHub org repo private → in-plugin updates need `BSP_GITHUB_TOKEN` + release asset `breeze-smart-purge.zip`.
-- Cloudways app id `tyaxssmjcp`; remote path `public_html/wp-content/plugins/breeze-smart-purge/`.
+- Display name: **Smart Purge for Breeze Cache**; first directory release **1.0.0**; contributor **kevpress88**.
+- No custom updater in directory zip; see `docs/WPORG_SUBMISSION.md` and `docs/SECURITY.md`.
 
 ## When to update this file
 
-After any incident, failed deploy, or architectural change — add one bullet here and mirror log paths in `docs/ACCESS.md` if needed.
+After deploy incidents, auth changes, or architecture updates — one bullet here; mirror paths in `docs/ACCESS.md` if needed.

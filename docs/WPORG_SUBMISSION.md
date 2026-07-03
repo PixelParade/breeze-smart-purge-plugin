@@ -46,6 +46,8 @@ Follow the [WordPress Security guide](https://developer.wordpress.org/apis/secur
 | **No custom updater on wp.org** | `includes/github-updater.php` excluded via `.distignore` |
 | **No secrets in code** | `BSP_GITHUB_TOKEN` only in wp-config on private sites |
 
+Full maintainer checklist: [SECURITY.md](SECURITY.md).
+
 Run Plugin Check before every SVN commit.
 
 ## Repo hygiene
