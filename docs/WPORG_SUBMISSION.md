@@ -102,4 +102,6 @@ CI: `plugin-check.yml` tests the **wporg** tree. `release.yml` produces **both**
 
 Client rollout policy: [MAINWP_ROLLOUT.md](MAINWP_ROLLOUT.md).
 
+**Future wp.org releases:** feature backlog and checklists — [WPORG_BACKLOG.md](WPORG_BACKLOG.md).
+
 Bump `Version:` in the plugin header and `Stable tag:` in `readme.txt` together for each wordpress.org release. MainWP client versions may run ahead on GitHub tags.
