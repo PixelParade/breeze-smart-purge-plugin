@@ -81,9 +81,11 @@ CI builds a clean folder from `.distignore` then runs [wordpress/plugin-check-ac
 
 ## Assets for the plugin directory page
 
-- `banner-772x250.png` (optional `banner-1544x500.png`)
+Prepared in **`assets/wporg/`** in this repo (upload to SVN `assets/` only):
+
 - `icon-128x128.png` and `icon-256x256.png`
-- Screenshots in `readme.txt` `== Screenshots ==` (optional)
+- `banner-772x250.png` and `banner-1544x500.png`
+- Screenshots in `readme.txt` `== Screenshots ==` (optional, not yet added)
 
 ## Two release lanes
 
