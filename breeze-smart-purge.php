@@ -3,194 +3,21 @@
  * Plugin Name: Breeze Smart Purge
  * Plugin URI: https://pixelparade.co
  * Description: Intelligently purges CPT Archives, Taxonomies, and Custom Page Builder Hubs via Breeze and Cloudflare.
- * Version: 1.0.6
+ * Version: 1.1.0
  * Author: PixelParade LLC
  * Author URI: https://pixelparade.co
  * License: GPL v2 or later
  * Text Domain: breeze-smart-purge
+ * Requires Plugins: breeze
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-// ====================================================================
-// GITHUB RELEASE UPDATES (Dashboard → Plugins → Update available)
-// Requires BSP_GITHUB_TOKEN in wp-config.php while the repo is private.
-// ====================================================================
-
-add_filter('pre_set_site_transient_update_plugins', 'bsp_pre_set_github_plugin_update');
-add_filter('plugins_api', 'bsp_plugins_api_github_info', 20, 3);
-add_filter('upgrader_pre_download', 'bsp_github_authenticated_download', 10, 4);
-
-function bsp_get_github_repo() {
-    return defined('BSP_GITHUB_REPO') ? BSP_GITHUB_REPO : 'PixelParade/breeze-smart-purge-plugin';
-}
-
-function bsp_get_github_token() {
-    return (defined('BSP_GITHUB_TOKEN') && BSP_GITHUB_TOKEN) ? BSP_GITHUB_TOKEN : '';
-}
-
-function bsp_github_request_args($args = []) {
-    $token = bsp_get_github_token();
-    if ($token) {
-        $args['headers']['Authorization'] = 'Bearer ' . $token;
-        $args['headers']['Accept'] = 'application/vnd.github+json';
-    }
-    return $args;
-}
-
-function bsp_is_github_package_url($url) {
-    return strpos($url, 'github.com') !== false || strpos($url, 'githubusercontent.com') !== false;
-}
-
-function bsp_fetch_latest_github_release() {
-    $cached = get_transient('bsp_github_release');
-    if (false !== $cached) {
-        return $cached ?: null;
-    }
-
-    $url = 'https://api.github.com/repos/' . bsp_get_github_repo() . '/releases/latest';
-    $response = wp_remote_get($url, bsp_github_request_args(['timeout' => 15]));
-
-    if (is_wp_error($response) || 200 !== (int) wp_remote_retrieve_response_code($response)) {
-        set_transient('bsp_github_release', '', HOUR_IN_SECONDS);
-        return null;
-    }
-
-    $data = json_decode(wp_remote_retrieve_body($response), true);
-    if (empty($data['tag_name'])) {
-        set_transient('bsp_github_release', '', HOUR_IN_SECONDS);
-        return null;
-    }
-
-    $package = '';
-    if (!empty($data['assets']) && is_array($data['assets'])) {
-        foreach ($data['assets'] as $asset) {
-            if (!empty($asset['name']) && 'breeze-smart-purge.zip' === $asset['name']) {
-                $package = $asset['browser_download_url'];
-                break;
-            }
-        }
-    }
-
-    $release = [
-        'version' => ltrim($data['tag_name'], 'vV'),
-        'package' => $package,
-        'url'     => !empty($data['html_url']) ? $data['html_url'] : 'https://github.com/' . bsp_get_github_repo(),
-        'notes'   => !empty($data['body']) ? $data['body'] : '',
-    ];
-
-    set_transient('bsp_github_release', $release, 12 * HOUR_IN_SECONDS);
-    return $release;
-}
-
-function bsp_pre_set_github_plugin_update($transient) {
-    if (!is_object($transient) || empty($transient->checked)) {
-        return $transient;
-    }
-
-    $plugin_file = plugin_basename(__FILE__);
-    $current_version = isset($transient->checked[$plugin_file]) ? $transient->checked[$plugin_file] : '';
-    $release = bsp_fetch_latest_github_release();
-
-    if (!$release || empty($release['version']) || empty($release['package'])) {
-        return $transient;
-    }
-
-    $update = (object) [
-        'slug'        => 'breeze-smart-purge',
-        'plugin'      => $plugin_file,
-        'new_version' => $release['version'],
-        'url'         => $release['url'],
-        'package'     => $release['package'],
-        'tested'      => get_bloginfo('version'),
-        'requires'    => '6.0',
-        'requires_php'=> '7.4',
-    ];
-
-    if (version_compare($release['version'], $current_version, '>')) {
-        $transient->response[$plugin_file] = $update;
-    } else {
-        $transient->no_update[$plugin_file] = $update;
-    }
-
-    return $transient;
-}
-
-function bsp_plugins_api_github_info($result, $action, $args) {
-    if ('plugin_information' !== $action) {
-        return $result;
-    }
-    if (empty($args->slug) || 'breeze-smart-purge' !== $args->slug) {
-        return $result;
-    }
-
-    $release = bsp_fetch_latest_github_release();
-    if (!$release) {
-        return $result;
-    }
-
-    return (object) [
-        'name'          => 'Breeze Smart Purge',
-        'slug'          => 'breeze-smart-purge',
-        'version'       => $release['version'],
-        'author'        => '<a href="https://pixelparade.co">PixelParade LLC</a>',
-        'homepage'      => 'https://pixelparade.co',
-        'requires'      => '6.0',
-        'requires_php'  => '7.4',
-        'download_link' => $release['package'],
-        'sections'      => [
-            'description' => 'Intelligently purges CPT archives, taxonomies, and page-builder hub pages via Breeze and Cloudflare.',
-            'changelog'   => !empty($release['notes']) ? wp_kses_post($release['notes']) : '',
-        ],
-    ];
-}
-
-function bsp_github_authenticated_download($reply, $package, $upgrader, $hook_extra = null) {
-    if (false !== $reply) {
-        return $reply;
-    }
-    if (!bsp_is_github_package_url($package)) {
-        return $reply;
-    }
-
-    $plugin_file = plugin_basename(__FILE__);
-    if (!empty($hook_extra['plugin']) && $hook_extra['plugin'] !== $plugin_file) {
-        return $reply;
-    }
-
-    $token = bsp_get_github_token();
-    if (!$token) {
-        return $reply;
-    }
-
-    $response = wp_remote_get($package, [
-        'timeout' => 300,
-        'headers' => [
-            'Authorization' => 'Bearer ' . $token,
-            'Accept'        => 'application/octet-stream',
-        ],
-    ]);
-
-    if (is_wp_error($response)) {
-        return $response;
-    }
-
-    if (200 !== (int) wp_remote_retrieve_response_code($response)) {
-        return new WP_Error(
-            'bsp_github_download_failed',
-            __('GitHub release download failed. Check BSP_GITHUB_TOKEN in wp-config.php.', 'breeze-smart-purge')
-        );
-    }
-
-    $tmp = wp_tempnam($package);
-    if (!$tmp) {
-        return new WP_Error('bsp_temp_file', __('Could not create a temporary file for the update.', 'breeze-smart-purge'));
-    }
-
-    file_put_contents($tmp, wp_remote_retrieve_body($response));
-    return $tmp;
+// GitHub Releases updater — private-repo / MainWP lane only (file omitted from wordpress.org builds).
+if (defined('BSP_GITHUB_TOKEN') && BSP_GITHUB_TOKEN && file_exists(__DIR__ . '/includes/github-updater.php')) {
+    require_once __DIR__ . '/includes/github-updater.php';
 }
 
 // ====================================================================
@@ -244,7 +71,10 @@ function bsp_user_can_use_breeze_toolbar() {
 }
 
 function bsp_get_current_request_url() {
-    $path = isset($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '/';
+    $path = '/';
+    if (isset($_SERVER['REQUEST_URI'])) {
+        $path = sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']));
+    }
     return home_url($path);
 }
 
@@ -286,9 +116,14 @@ function bsp_get_admin_bar_context_post() {
     if ($post) {
         return $post;
     }
-    if (!is_admin() || !isset($_GET['post'])) {
+    if (!is_admin() || !current_user_can('edit_posts')) {
         return null;
     }
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin post ID from query string; capability checked above.
+    if (!isset($_GET['post'])) {
+        return null;
+    }
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
     $post = get_post((int) $_GET['post']);
     return ($post instanceof WP_Post) ? $post : null;
 }
@@ -324,9 +159,6 @@ function bsp_invoke_breeze_admin_bar_menu($wp_admin_bar) {
         $ref->getMethod('register_admin_bar_menu')->invoke($admin, $wp_admin_bar);
         bsp_fix_breeze_toolbar_purge_hrefs($wp_admin_bar);
     } catch (Throwable $e) {
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('BSP breeze admin bar: ' . $e->getMessage());
-        }
         return;
     } finally {
         global $current_screen;
@@ -484,7 +316,8 @@ function bsp_handle_frontend_breeze_purge_links() {
 
 add_action('wp_footer', 'bsp_frontend_cache_cleared_notice');
 function bsp_frontend_cache_cleared_notice() {
-    if (is_admin() || !isset($_GET['breeze_post_cache']) || $_GET['breeze_post_cache'] !== 'cleared') {
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only notice after Breeze purge redirect.
+    if (is_admin() || !isset($_GET['breeze_post_cache']) || 'cleared' !== sanitize_text_field(wp_unslash($_GET['breeze_post_cache']))) {
         return;
     }
     if (!bsp_user_can_use_breeze_toolbar()) {
@@ -1043,7 +876,7 @@ function bsp_ajax_save_handler() {
     // Save Manual Map
     $new_manual_map = [];
     if (isset($_POST['bsp_manual_map']) && is_array($_POST['bsp_manual_map'])) {
-        $unslashed_map = wp_unslash($_POST['bsp_manual_map']);
+        $unslashed_map = map_deep(wp_unslash($_POST['bsp_manual_map']), 'sanitize_textarea_field');
         foreach ($unslashed_map as $post_type => $urls_string) {
             $urls_array = array_unique(array_filter(array_map('sanitize_text_field', array_map('trim', explode("\n", $urls_string)))));
             $new_manual_map[sanitize_text_field($post_type)] = $urls_array;
@@ -1054,7 +887,7 @@ function bsp_ajax_save_handler() {
     // Save Ignored Map
     $new_ignored_map = [];
     if (isset($_POST['bsp_ignored_map']) && is_array($_POST['bsp_ignored_map'])) {
-        $unslashed_ignored = wp_unslash($_POST['bsp_ignored_map']);
+        $unslashed_ignored = map_deep(wp_unslash($_POST['bsp_ignored_map']), 'sanitize_textarea_field');
         foreach ($unslashed_ignored as $post_type => $urls_string) {
             $urls_array = array_unique(array_filter(array_map('sanitize_text_field', array_map('trim', explode("\n", $urls_string)))));
             $new_ignored_map[sanitize_text_field($post_type)] = $urls_array;

@@ -1,41 +1,73 @@
 ---
-description: Post-deploy verification, error logs, and lessons from staging incidents
+description: Lessons from scaffold, deploy, staging incidents, and WP.org prep
 alwaysApply: true
 ---
 
 # Ops lessons — Breeze Smart Purge
 
+## Project setup (scaffold thread)
+
+- **One repo, one folder:** `C:\Users\kevin\Projects\breeze-smart-purge-plugin` only. Delete ignore `pixelparade-wp-plugin` stub; Cursor sidebar duplicates are old agent sessions, not second projects.
+- **Canonical GitHub:** `PixelParade/breeze-smart-purge-plugin` (org). Personal repo is legacy; do not fork workflow across two remotes.
+- **Novamira MCP:** project `.cursor/mcp.json` only — never global `~/.cursor/mcp.json`. Hostname must be `breeze-smart-purge.pixelparade.dev` before any MCP call.
+- **Do not put plugin code in** `novamira-playground` — that repo is Figma/Bricks command center.
+- **Two deploy lanes:** `main` push → staging CI; tag `v*` → GitHub Release zip → MainWP / WP Updates on clients.
+
 ## After every deploy or big PHP change
 
-Do not assume CI green means the site works. Verify in this order:
+1. `cd public_html && wp plugin list | grep breeze-smart-purge` — parse/fatal errors show here first.
+2. Homepage + wp-admin must not show critical-error screen.
+3. **Browser check** for UI (admin bar, settings) while logged in.
+4. `grep 'Version:' …/breeze-smart-purge.php` on server.
 
-1. **Server smoke test** — SSH/plink: `cd public_html && wp plugin list | grep breeze-smart-purge` (parse errors show here immediately).
-2. **HTTP check** — staging homepage and wp-admin must not return the critical-error screen.
-3. **Browser check** — for admin-bar, settings UI, or frontend behavior, use the browser MCP: load the page logged-in, snapshot the admin bar / UI, click purge items if needed.
-4. **Version on disk** — `grep 'Version:' public_html/wp-content/plugins/breeze-smart-purge/breeze-smart-purge.php`.
+If site is down: **SCP hotfix** to `public_html/wp-content/plugins/breeze-smart-purge/` immediately; do not wait for CI.
 
-If the site is down, **SCP the hotfix immediately** (`pscp` to `public_html/wp-content/plugins/breeze-smart-purge/`) while CI runs; do not wait on Actions alone.
-
-## Where to read errors (staging Cloudways)
+## Error logs (staging Cloudways)
 
 | Source | Path / command |
 |--------|----------------|
-| WP-CLI | `cd public_html && wp plugin list` — fastest for PHP parse/fatal errors |
-| WordPress debug log | `public_html/wp-content/debug.log` (only if `WP_DEBUG_LOG` is on; currently often empty) |
-| Nginx / app logs | `../logs/` from app root — e.g. `*error.log`, `php-app*.log` |
-| GitHub Actions | `gh run view <id> --log-failed` |
+| WP-CLI | `wp plugin list` (fastest) |
+| WP debug | `wp-content/debug.log` (only if `WP_DEBUG_LOG`; usually off) |
+| Server | `../logs/*error.log`, `php-app*.log` |
+| CI | `gh run view <id> --log-failed` |
 
-`WP_DEBUG` is `false` on staging — do not rely on on-screen notices; use WP-CLI or logs.
+## Staging deploy (GitHub Actions)
 
-## PHP / WordPress pitfalls (logged from real incidents)
+- **User:** `cursor-user` — cannot write `/tmp` or home root; SCP to `public_html/wp-content/plugins/breeze-smart-purge/` only.
+- **Master SSH keys** on Cloudways ≠ `cursor-user` keys; CI uses password SCP (`STAGING_SSH_PASSWORD`).
+- **Cloudways Git deploy** uses its own SSH key + optional API pull; different from Actions SCP.
+- **Novamira MCP** for WP-aware reads; SSH/pscp for bulk file sync.
 
-- **Double-quoted PHP strings + jQuery** — `$('...')` in `"..."` causes parse errors. Use single-quoted PHP strings or escape `\$`.
-- **Breeze admin code on frontend** — `Breeze_Admin::load_admin_scripts()` and `get_current_screen()` assume wp-admin; calling them on the frontend can fatal when screen is null.
-- **Delegate, don't duplicate** — prefer invoking Breeze's `register_admin_bar_menu` on the frontend; BSP only adds Smart Purge items + frontend purge URL fixes. Wrap delegation in try/catch.
-- **Screen stub for Breeze invoke** — load `class-wp-screen.php` + `screen.php` on frontend; set `global $current_screen = WP_Screen::get('front')` before calling Breeze. Never use plain `stdClass` (breaks `is_admin()`).
-- **Cloudways `cursor-user` SSH** — cannot write `/tmp` or home root; SCP/rsync must target `public_html/wp-content/plugins/breeze-smart-purge/` directly.
-- **Master SSH keys** ≠ application SSH user keys; CI uses `cursor-user` + password SCP unless switched to Cloudways Git pull API.
+## GitHub / auth
 
-## When to update this rule
+- `gh auth login --web` when fine-grained PAT lacks org access.
+- Authorize PAT for **PixelParade** org; `gh api user/orgs` should list it.
+- Never commit `.env.deploy.local`, `.cursor/mcp.json`, or tokens pasted in chat.
 
-After any production/staging incident, failed deploy, or architectural change, append a one-line lesson here (and optionally `docs/ACCESS.md` troubleshooting).
+## PHP / WordPress pitfalls
+
+- **jQuery in PHP strings:** `$('…')` inside `"…"` → parse error. Use single-quoted PHP strings.
+- **Frontend Breeze toolbar:** delegate via `Breeze_Admin::register_admin_bar_menu` (reflection); BSP adds only Smart Purge items. Load `class-wp-screen.php` + `screen.php`; set `WP_Screen::get('front')` before invoke. Never `stdClass` stub (`is_admin()` fatals).
+- **Silent try/catch** hid toolbar failure — always verify with WP-CLI or browser after delegate changes.
+- **Breeze `load_admin_scripts`** on frontend fatals when `get_current_screen()` is null — enqueue Breeze JS manually on frontend only.
+
+## WP.org submission
+
+- Run **Plugin Check** (`.github/workflows/plugin-check.yml` + `wp plugin check` on staging).
+- Release zip must contain only distributable files (`.distignore`); no `.github`, `docs`, `scripts`, dev chunks.
+- **GitHub updater** lives in `includes/github-updater.php`; excluded from wp.org zip via `.distignore`; loaded only when `BSP_GITHUB_TOKEN` is in wp-config. GitHub Release zip (`release.yml`) still includes it.
+- `readme.txt`: valid UTF-8 (no mojibake), `Tested up to` current WP, `Stable tag` matches header `Version`, `Contributors:` wp.org slugs.
+- Plugin Check on staging: `wp plugin install plugin-check --activate` then `wp plugin check breeze-smart-purge --require=wp-content/plugins/plugin-check/cli.php`.
+- Full checklist: `docs/WPORG_SUBMISSION.md`.
+
+## Scaffold thread (extra)
+
+- Windows `scp` without PuTTY hangs on password — use `plink`/`pscp` or Novamira MCP `read-file` to pull plugin source.
+- `scripts/pull-from-staging.ps1`: tries `pscp`, falls back to plink `cat` + base64.
+- Staging plugin is **single-file** (`breeze-smart-purge.php` + `readme.txt`); delete any `includes/` scaffold from initial template unless adding optional files (e.g. github-updater).
+- GitHub org repo private → in-plugin updates need `BSP_GITHUB_TOKEN` + release asset `breeze-smart-purge.zip`.
+- Cloudways app id `tyaxssmjcp`; remote path `public_html/wp-content/plugins/breeze-smart-purge/`.
+
+## When to update this file
+
+After any incident, failed deploy, or architectural change — add one bullet here and mirror log paths in `docs/ACCESS.md` if needed.

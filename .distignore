@@ -1,0 +1,11 @@
+.git
+.github
+.cursor
+.deploy-chunks
+docs
+scripts
+.env.deploy.example
+README.md
+*.zip
+.gitignore
+includes/github-updater.php
