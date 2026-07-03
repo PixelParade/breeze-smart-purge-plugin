@@ -1,7 +1,9 @@
 <?php
 /**
- * Add to wp-config.php (above "That's all, stop editing!") on staging and client sites
- * while PixelParade/breeze-smart-purge-plugin is private.
+ * Add to wp-config.php (above "That's all, stop editing!") on **MainWP client sites**
+ * (and optionally staging to test the release update path).
+ *
+ * Not used on external wordpress.org-only installs.
  *
  * Use a fine-grained GitHub PAT with read access to the repo (Contents: Read-only).
  * Never commit the real token to git.

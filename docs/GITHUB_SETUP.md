@@ -6,14 +6,28 @@
 
 Local folder: `C:\Users\kevin\Projects\breeze-smart-purge-plugin`
 
-## Two update lanes
+## One repo, two builds, three lanes
 
-| Lane | Trigger | Mechanism | Where |
-|------|---------|-----------|--------|
-| **Staging dev** | Push to `main` | GitHub Actions → SSH rsync | Staging only |
-| **Versioned rollout** | Tag `v*` (e.g. `v1.0.2`) | GitHub Release zip | Staging (test), clients via MainWP or WP Updates |
+| Lane | Audience | Trigger | Artifact | Where |
+|------|----------|---------|----------|--------|
+| **Staging dev** | Developers | Push to `main` | Agency file tree (SSH) | `breeze-smart-purge.pixelparade.dev` only |
+| **Agency release** | MainWP client sites | Tag `v*` | `smart-purge-for-breeze-cache.zip` | GitHub Releases + MainWP / WP Updates |
+| **wordpress.org** | External (non-clients) | Manual SVN | `smart-purge-for-breeze-cache-wporg.zip` | Plugin directory |
 
-Staging should **not** depend on Dashboard → Plugins → Update for day-to-day dev — that is automatic from `main`. Use WP Updates to **test the same zip path** clients get before MainWP rollout.
+**MainWP clients** get early/special features (`includes/agency/`) and the GitHub updater. **wp.org users** get the public subset only. See [MAINWP_ROLLOUT.md](MAINWP_ROLLOUT.md) for per-site rules and rollout steps.
+
+Staging tracks `main` automatically — **not** the same as client updates. Clients only change when you **tag a release** and **run an update** (MainWP or wp-admin).
+
+### Build excludes
+
+| File | Purpose |
+|------|---------|
+| `.distignore` | Dev/repo files excluded from **both** zips |
+| `.distignore.wporg` | Agency-only paths excluded from **wporg** zip only |
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/build-plugin-zips.ps1
+```
 
 ## Remotes
 
@@ -61,7 +75,7 @@ Org API invite requires a PAT with **admin:org**; use the GitHub UI if `gh` retu
 
 ## Staging auto-deploy checklist
 
-Complete these once; after that, every push to `main` updates staging.
+Complete these once; after that, every push to `main` updates staging with the **agency** tree (`includes/github-updater.php` + `includes/agency/`).
 
 ### 1. Cloudways SSH key
 
@@ -106,25 +120,29 @@ Or trigger manually: **Actions → Deploy to Staging → Run workflow**.
 
 ### 4. WordPress update checker on staging (optional test path)
 
-While the repo is **private**, add a read-only GitHub PAT to staging `wp-config.php` so **Dashboard → Plugins** can see and install releases:
+While the repo is **private**, add a read-only GitHub PAT to staging `wp-config.php` so **Dashboard → Plugins** can test the **agency** release zip:
 
 See [docs/wp-config-github-updates.example.php](wp-config-github-updates.example.php).
 
 After the repo is **public**, the token is optional (API rate limits still apply).
 
-## Releases and client rollout
+## Releases and MainWP client rollout
 
 ```powershell
 # Bump Version: in smart-purge-for-breeze-cache.php header + readme.txt Stable tag, commit, then:
-git tag v1.0.2
-git push origin v1.0.2
+git tag v1.2.0
+git push origin v1.2.0
 ```
 
-GitHub Actions builds `smart-purge-for-breeze-cache.zip` and attaches it to the release.
+GitHub Actions attaches **both** zips to the release:
 
-- **MainWP:** bulk update from the release asset URL
-- **Native WP:** Plugins → Update available (plugin checks GitHub Releases API)
+| Asset | Use |
+|-------|-----|
+| `smart-purge-for-breeze-cache.zip` | **MainWP clients** — updater downloads this name |
+| `smart-purge-for-breeze-cache-wporg.zip` | **SVN** — upload to wordpress.org when ready |
+
+Full rollout checklist: [MAINWP_ROLLOUT.md](MAINWP_ROLLOUT.md).
 
 ## Make public (when ready)
 
-Repo **Settings → Danger zone → Change visibility → Public**. Then client sites can update without `BSP_GITHUB_TOKEN`.
+Repo **Settings → Danger zone → Change visibility → Public**. MainWP clients can keep using `BSP_GITHUB_TOKEN` for rate limits; wp.org lane is unchanged.

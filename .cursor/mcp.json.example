@@ -8,6 +8,15 @@
         "WP_API_USERNAME": "your-email@example.com",
         "WP_API_PASSWORD": "your-application-password"
       }
+    },
+    "mainwp-pixelparade": {
+      "command": "npx",
+      "args": ["-y", "@mainwp/mcp"],
+      "env": {
+        "MAINWP_URL": "https://mainwp.pixelparade.co",
+        "MAINWP_USER": "your-email@example.com",
+        "MAINWP_APP_PASSWORD": "your-application-password"
+      }
     }
   }
 }

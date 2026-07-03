@@ -9,7 +9,8 @@ alwaysApply: true
 
 - **Canonical repo:** `PixelParade/breeze-smart-purge-plugin` at `breeze-smart-purge-plugin/`.
 - **Staging:** `breeze-smart-purge.pixelparade.dev` — verify hostname before remote changes.
-- **Two lanes:** `main` → staging CI; tag `v*` → GitHub Release → MainWP / WP Updates. wordpress.org uses SVN separately (`docs/WPORG_SUBMISSION.md`).
+- **Three lanes:** `main` → staging CI (agency tree); tag `v*` → agency zip → MainWP clients; wporg zip → SVN for external users. See `docs/MAINWP_ROLLOUT.md` and `docs/WPORG_SUBMISSION.md`.
+- **MainWP clients:** agency build only — `BSP_GITHUB_TOKEN`, never wordpress.org install for this plugin.
 
 ## After every deploy or significant PHP change
 
@@ -44,7 +45,15 @@ Emergency hotfix: SCP to `public_html/wp-content/plugins/smart-purge-for-breeze-
 ## wordpress.org
 
 - Display name: **Smart Purge for Breeze Cache**; first directory release **1.0.0**; contributor **kevpress88**.
-- No custom updater in directory zip; see `docs/WPORG_SUBMISSION.md` and `docs/SECURITY.md`.
+- wporg zip excludes updater + `includes/agency/` (`.distignore.wporg`); see `docs/WPORG_SUBMISSION.md` and `docs/SECURITY.md`.
+- MainWP client policy: `docs/MAINWP_ROLLOUT.md`.
+
+## Incident: bad zip rollout (Jul 2026)
+
+- Windows-built zips with backslash entry paths created undeletable `smart-purge-for-breeze-cache-XXXXXX/` junk folders on ~37 client sites (files had literal `\` in names; WP/MainWP delete fails).
+- Cleanup: `build/clean-smart-purge-site.ps1` — SFTP per site, `rm` each file with doubled backslashes, then `rmdir`. Temp Cloudways app credentials created via API and deleted afterward.
+- Non-Cloudways sites (mindpeacecincinnati.com on WP Engine, stranzcrossleyinc.com) need manual cleanup via host file manager.
+- Build scripts now force forward slashes; never use `[System.IO.Compression.ZipFile]::CreateFromDirectory` on Windows for plugin zips.
 
 ## When to update this file
 

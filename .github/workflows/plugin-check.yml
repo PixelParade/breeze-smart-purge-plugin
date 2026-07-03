@@ -18,11 +18,12 @@ jobs:
           php-version: '8.2'
           tools: wp-cli
 
-      - name: Build distributable plugin folder
+      - name: Build wordpress.org distributable folder
         run: |
           mkdir -p build/smart-purge-for-breeze-cache
           rsync -av \
             --exclude-from='.distignore' \
+            --exclude-from='.distignore.wporg' \
             --exclude='build' \
             ./ build/smart-purge-for-breeze-cache/
 
@@ -31,3 +32,18 @@ jobs:
         with:
           build-dir: './build/smart-purge-for-breeze-cache'
           exclude-directories: '.git,.github'
+
+  build-zips:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build both zips (smoke test)
+        run: bash scripts/build-plugin-zips.sh
+
+      - name: Verify agency zip contents
+        run: |
+          unzip -l smart-purge-for-breeze-cache.zip | grep -E 'github-updater|includes/agency/bootstrap'
+          test ! -f build/wporg/smart-purge-for-breeze-cache/includes/github-updater.php
+          test ! -d build/wporg/smart-purge-for-breeze-cache/includes/agency

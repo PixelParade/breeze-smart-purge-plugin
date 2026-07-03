@@ -17,10 +17,20 @@ alwaysApply: true
 
 ## Architecture
 
-- **Core:** `smart-purge-for-breeze-cache.php` + `readme.txt`; optional `includes/github-updater.php` for private GitHub updates (excluded from wp.org zip)
+- **Core:** `smart-purge-for-breeze-cache.php` + `readme.txt`
+- **Agency lane (MainWP clients):** `includes/github-updater.php` + `includes/agency/` — shipped in agency zip, excluded from wp.org via `.distignore.wporg`
 - **Function prefix:** `bsp_` for all functions, AJAX actions, and hooks
 - **Options prefix:** `bsp_` (e.g. `bsp_settings`, `bsp_scanned_map`, `bsp_manual_map`)
 - **Dependency:** requires active Breeze Cache plugin (`BREEZE_VERSION` defined; `Requires Plugins: breeze`)
+
+## Builds and audiences
+
+| Build | Zip | Audience |
+|-------|-----|----------|
+| Agency | `smart-purge-for-breeze-cache.zip` | MainWP clients, staging |
+| wp.org | `smart-purge-for-breeze-cache-wporg.zip` | External / directory |
+
+Agency-only code: `includes/agency/bootstrap.php` and siblings. See [docs/MAINWP_ROLLOUT.md](docs/MAINWP_ROLLOUT.md).
 
 ## Coding standards
 
@@ -32,9 +42,9 @@ alwaysApply: true
 
 ## Environments
 
-- **Staging:** `breeze-smart-purge.pixelparade.dev` — see [docs/ACCESS.md](docs/ACCESS.md)
-- **wordpress.org:** SVN slug `smart-purge-for-breeze-cache`
-- **Clients:** GitHub release tags + MainWP
+- **Staging:** `breeze-smart-purge.pixelparade.dev` — agency tree from `main`; see [docs/ACCESS.md](docs/ACCESS.md)
+- **MainWP clients:** agency GitHub Release zip — [docs/MAINWP_ROLLOUT.md](docs/MAINWP_ROLLOUT.md)
+- **wordpress.org:** wporg zip / SVN — external users only
 
 ## Secrets
 
@@ -43,10 +53,10 @@ alwaysApply: true
 
 ## Dev workflow
 
-1. Edit `smart-purge-for-breeze-cache.php` locally (source of truth)
-2. Push to `main` → GitHub Actions deploys to staging
+1. Edit `smart-purge-for-breeze-cache.php` and `includes/agency/` (agency features)
+2. Push to `main` → GitHub Actions deploys agency tree to staging
 3. Test on staging (WP-CLI + browser)
-4. Tag `v*` release → GitHub Release zip → MainWP rollout to client sites
+4. Tag `v*` → agency zip for MainWP; wporg zip for SVN when public subset is ready
 
 ## Site access
 

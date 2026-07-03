@@ -7,7 +7,8 @@ on:
 
 env:
   PLUGIN_SLUG: smart-purge-for-breeze-cache
-  ZIP_NAME: smart-purge-for-breeze-cache.zip
+  AGENCY_ZIP: smart-purge-for-breeze-cache.zip
+  WPORG_ZIP: smart-purge-for-breeze-cache-wporg.zip
 
 jobs:
   release:
@@ -18,35 +19,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build plugin zip
-        run: |
-          mkdir -p build/${{ env.PLUGIN_SLUG }}
-          rsync -av \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='.cursor' \
-            --exclude='.env.deploy.local' \
-            --exclude='docs' \
-            --exclude='scripts' \
-            --exclude='README.md' \
-            --exclude='LICENSE' \
-            --exclude='build' \
-            --exclude='*.zip' \
-            ./ build/${{ env.PLUGIN_SLUG }}/
-          cd build && zip -r ../${{ env.ZIP_NAME }} ${{ env.PLUGIN_SLUG }}
+      - name: Build agency and wordpress.org zips
+        run: bash scripts/build-plugin-zips.sh
 
       - name: Create GitHub Release
         id: gh_release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.ZIP_NAME }}
+          files: |
+            ${{ env.AGENCY_ZIP }}
+            ${{ env.WPORG_ZIP }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release summary
         run: |
-          echo "Release asset: smart-purge-for-breeze-cache.zip (folder ${{ env.PLUGIN_SLUG }}/ inside zip)"
-          echo "WordPress: Dashboard → Plugins → Update (needs BSP_GITHUB_TOKEN while repo is private)"
-          echo "MainWP: install/update from the GitHub release asset URL"
+          echo "Agency asset (MainWP / BSP_GITHUB_TOKEN): ${{ env.AGENCY_ZIP }}"
+          echo "  Includes: includes/github-updater.php, includes/agency/"
+          echo "wordpress.org asset (SVN — manual upload): ${{ env.WPORG_ZIP }}"
+          echo "  Excludes updater and agency-only code (.distignore.wporg)"
           echo "Release URL: ${{ steps.gh_release.outputs.url }}"

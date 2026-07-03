@@ -1,0 +1,4 @@
+# Excluded from wordpress.org / public builds only.
+# Agency (MainWP) builds use .distignore but NOT this file.
+includes/github-updater.php
+includes/agency

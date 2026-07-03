@@ -16,17 +16,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy plugin files to Cloudways staging
+      - name: Deploy agency plugin tree to Cloudways staging
         env:
           SSHPASS: ${{ secrets.STAGING_SSH_PASSWORD }}
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq sshpass
           REMOTE="${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}:${{ env.STAGING_REMOTE_PLUGIN_PATH }}/"
-          sshpass -e scp -o StrictHostKeyChecking=no smart-purge-for-breeze-cache.php readme.txt "$REMOTE"
+          sshpass -e scp -o StrictHostKeyChecking=no \
+            smart-purge-for-breeze-cache.php \
+            readme.txt \
+            "$REMOTE"
+          sshpass -e scp -o StrictHostKeyChecking=no -r \
+            includes \
+            "$REMOTE"
 
       - name: Deploy summary
         run: |
-          echo "Deployed branch ${{ github.ref_name }} commit ${{ github.sha }} to staging."
+          echo "Deployed branch ${{ github.ref_name }} commit ${{ github.sha }} to staging (agency build)."
           echo "Plugin path: ${{ env.STAGING_REMOTE_PLUGIN_PATH }}/"
-          echo "Staging tracks main on push. Use GitHub Releases for versioned WP Updates."
+          echo "Includes: github-updater.php + includes/agency/ (same tree as agency release zip)."
+          echo "Staging tracks main on push. Tag v* for versioned MainWP / GitHub Release rollouts."

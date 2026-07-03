@@ -1,3 +1,4 @@
+# Shared dev/repo exclusions — both agency and wordpress.org builds.
 .git
 .github
 .cursor
@@ -5,9 +6,12 @@
 docs
 scripts
 .env.deploy.example
+.env.deploy.local
+dist
 README.md
+LICENSE
 *.zip
 .gitignore
 .distignore
-includes/github-updater.php
+.distignore.wporg
 assets
