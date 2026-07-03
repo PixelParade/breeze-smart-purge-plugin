@@ -36,6 +36,7 @@ jobs:
             ${{ env.WPORG_ZIP }}
             assets/icon-128x128.png
             assets/icon-256x256.png
+            assets/icon-512x512.png
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

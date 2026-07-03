@@ -73,22 +73,28 @@ function bsp_get_plugin_update_assets() {
 	global $bsp_main_plugin;
 
 	$plugin_dir = plugin_dir_path($bsp_main_plugin);
-	if (file_exists($plugin_dir . 'assets/icon-128x128.png')) {
+	$icon_1x_path = '';
+	$icon_2x_path = '';
+
+	if (file_exists($plugin_dir . 'assets/icon-512x512.png')) {
+		$icon_1x_path = 'assets/icon-256x256.png';
+		$icon_2x_path = 'assets/icon-512x512.png';
+	} elseif (file_exists($plugin_dir . 'assets/icon-256x256.png')) {
 		$icon_1x_path = 'assets/icon-128x128.png';
 		$icon_2x_path = 'assets/icon-256x256.png';
-	} else {
+	} elseif (file_exists($plugin_dir . 'assets/wporg/icon-256x256.png')) {
 		$icon_1x_path = 'assets/wporg/icon-128x128.png';
 		$icon_2x_path = 'assets/wporg/icon-256x256.png';
 	}
 
-	$icon_1x = plugins_url($icon_1x_path, $bsp_main_plugin);
-	$icon_2x = plugins_url($icon_2x_path, $bsp_main_plugin);
+	$icon_1x = $icon_1x_path ? plugins_url($icon_1x_path, $bsp_main_plugin) : '';
+	$icon_2x = $icon_2x_path ? plugins_url($icon_2x_path, $bsp_main_plugin) : '';
 
 	return array(
 		'icons'   => array(
 			'1x'      => $icon_1x,
 			'2x'      => $icon_2x,
-			'default' => $icon_1x,
+			'default' => $icon_2x ? $icon_2x : $icon_1x,
 		),
 		'banners' => array(
 			'low'  => plugins_url('assets/wporg/banner-772x250.png', $bsp_main_plugin),

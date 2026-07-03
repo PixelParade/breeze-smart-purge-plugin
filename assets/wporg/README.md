@@ -8,6 +8,7 @@ The plugin zip also ships copies at `assets/icon-128x128.png` and `assets/icon-2
 |------|-----|
 | `icon-128x128.png` | Plugin icon (required) |
 | `icon-256x256.png` | Plugin icon @2x |
+| `icon-512x512.png` | Plugin icon @4x (retina Updates / Favorites) |
 | `banner-772x250.png` | Plugin page banner |
 | `banner-1544x500.png` | Retina banner (optional) |
 

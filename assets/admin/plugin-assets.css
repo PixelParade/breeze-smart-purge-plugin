@@ -1,0 +1,24 @@
+/**
+ * Plugin icon and banner display — Updates screen, Plugins list, View details modal.
+ */
+
+/* Updates (update-core.php) */
+.update-php .plugin-icon,
+.plugins .plugin-icon,
+.plugin-card .plugin-icon,
+.plugin-icon {
+	object-fit: cover;
+	object-position: center;
+}
+
+/* Thickbox plugin details */
+#plugin-information-content .plugin-icon,
+#plugin-information-header .plugin-icon {
+	object-fit: cover;
+	object-position: center;
+}
+
+#plugin-information-title.with-banner {
+	background-size: cover !important;
+	background-position: center center !important;
+}

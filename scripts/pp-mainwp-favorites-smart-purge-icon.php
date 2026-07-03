@@ -15,11 +15,11 @@ if (!defined('ABSPATH')) {
 define('PP_BSP_FAVORITES_SLUG', 'smart-purge-for-breeze-cache');
 define(
 	'PP_BSP_FAVORITES_ICON_1X',
-	'https://github.com/PixelParade/breeze-smart-purge-plugin/releases/latest/download/icon-128x128.png'
+	'https://github.com/PixelParade/breeze-smart-purge-plugin/releases/latest/download/icon-256x256.png'
 );
 define(
 	'PP_BSP_FAVORITES_ICON_2X',
-	'https://github.com/PixelParade/breeze-smart-purge-plugin/releases/latest/download/icon-256x256.png'
+	'https://github.com/PixelParade/breeze-smart-purge-plugin/releases/latest/download/icon-512x512.png'
 );
 
 /**
@@ -44,7 +44,8 @@ function pp_bsp_favorites_is_smart_purge_item($data) {
  * @return string
  */
 function pp_bsp_favorites_icon_html() {
-	return '<img src="' . esc_url(PP_BSP_FAVORITES_ICON_1X) . '" class="pp-bsp-favorites-icon" alt="" width="128" height="128" />';
+	$style = 'object-fit:cover;object-position:center;';
+	return '<img src="' . esc_url(PP_BSP_FAVORITES_ICON_1X) . '" srcset="' . esc_url(PP_BSP_FAVORITES_ICON_1X) . ' 1x, ' . esc_url(PP_BSP_FAVORITES_ICON_2X) . ' 2x" class="pp-bsp-favorites-icon" alt="" width="128" height="128" style="' . esc_attr($style) . '" />';
 }
 
 /**
