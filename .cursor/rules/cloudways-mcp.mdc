@@ -1,0 +1,61 @@
+---
+description: Cloudways MCP discovery, PHP-FPM vs php.ini, and extended toolsets for Breeze Smart Purge staging
+alwaysApply: true
+---
+
+# Cloudways MCP (Breeze Smart Purge)
+
+**MCP server:** `user-cloudways` (global `~/.cursor/mcp.json`)  
+**Staging site:** `breeze-smart-purge.pixelparade.dev`  
+**Global rule:** user rule **Cloudways MCP tool discovery** (same protocol in every workspace)
+
+## Discovery workflow (required)
+
+~65 tools are in the default list; **150+ more** live in extended toolsets. Before saying a Cloudways request is unsupported:
+
+1. `list_available_toolsets`
+2. `get_toolset_tools` on the relevant toolset
+3. `execute_tool` for non-default tools (or call default tools by name directly)
+
+## PHP configuration (do not conflate)
+
+| Layer | Tools | What it controls |
+|-------|-------|------------------|
+| **Server php.ini** | `server_settings_get` / `server_settings_update` | `memory_limit`, `upload_size`, `execution_limit`, `disable_functions`, etc. |
+| **Per-app PHP-FPM pool** | `app_fpm_settings_get` / `app_fpm_settings_update` | Worker pool config — toolset **`apps`** via `execute_tool` |
+| **Restart PHP-FPM** | `service_restart` (`service`: `php-fpm`) | After FPM or php.ini changes |
+
+API v2: [Get FPM Settings](https://developers.cloudways.com/docs#tag/App-Management/operation/Get%20FPM%20Settings).  
+`app_fpm_settings_update` needs `fpm_setting` as **base64-encoded** config.
+
+**Staging note:** Enabling `proc_open` / `proc_close` for Novamira `run-wp-cli` is a **php.ini** change (`disable_functions`), not PHP-FPM pool config. Prefer SSH WP-CLI when possible — see `docs/ACCESS.md`.
+
+## Common tools for this project
+
+| Goal | Tool | Access |
+|------|------|--------|
+| Find staging server/app | `server_list`, `app_list` | default |
+| Purge Breeze/Varnish cache after deploy | `app_purge_cache` | default |
+| Read php.ini (`disable_functions`, limits) | `server_settings_get` | default |
+| Read per-app PHP-FPM pool | `app_fpm_settings_get` | extended `apps` |
+| SSH/SFTP creds | `app_credentials` | default |
+| Git deploy to staging | `git_pull`, etc. | extended `git` |
+| Cron optimizer (WP-Cron) | `app_cron_optimizer_update` | extended `apps` |
+
+## Extended toolsets (via `execute_tool`)
+
+| Toolset | Use on staging |
+|---------|----------------|
+| `apps` | FPM settings, cron optimizer, webroot, object cache |
+| `git` | Pull after manual Git linkage |
+| `security` | SSL, IP whitelist |
+| `services` | Restart nginx, php-fpm, varnish |
+
+Default tools (`server_list`, `app_purge_cache`, …) → call **directly**, not via `execute_tool`.
+
+## Safety
+
+- Staging mutations are lower risk but still name **hostname** + `server_id` / `app_id` before writes.
+- Do not apply php.ini or FPM experiments learned on staging to MainWP production clients without explicit approval.
+- Async ops return `operation_id` → poll `operation_status`.
+- Novamira site binding: `novamira-mcp-safety.mdc` (WordPress layer). Cloudways MCP is infra layer — both can apply in one session.

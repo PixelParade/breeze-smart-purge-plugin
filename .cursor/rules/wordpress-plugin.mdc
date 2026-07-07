@@ -61,4 +61,5 @@ Agency-only code: `includes/agency/bootstrap.php` and siblings. See [docs/MAINWP
 ## Site access
 
 - **Remote WP API** — project `.cursor/mcp.json` only (gitignored). See [docs/ACCESS.md](docs/ACCESS.md).
+- **Cloudways infra** — global `~/.cursor/mcp.json` (`user-cloudways`). Rule: `.cursor/rules/cloudways-mcp.mdc`.
 - **SSH** — `.env.deploy.local` + `scripts/pull-from-staging.ps1` or GitHub Actions.
