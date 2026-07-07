@@ -57,6 +57,8 @@ Emergency hotfix: SCP to `public_html/wp-content/plugins/smart-purge-for-breeze-
 
 ## Staging deploy
 
+- **Efficient staging test (default):** `git commit` → `git push origin main` → **Deploy to Staging** CI only (`breeze-smart-purge.pixelparade.dev`). Does **not** update MainWP clients (those need tag `v*` + release zip). Faster and more reliable than Novamira hotfix for `smart-purge-for-breeze-cache.php` (large file gets chunked and stalls).
+- **Novamira hotfix:** only for tiny pre-commit tweaks (`assets/admin/settings.js`, `.css`). Always follow with commit + push or the next CI run overwrites.
 - On Windows PowerShell, `curl` is `Invoke-WebRequest` (no timeout) — use `curl.exe -s -m 30` for HTTP fetches or agents hang on slow endpoints.
 - **After SCP/CI deploy:** plugin root must be mode **755** (not 744) or Apache/`www-data` cannot traverse `wp-content/plugins/smart-purge-for-breeze-cache/` — `settings.css` / `settings.js` return **403** (*Server unable to read htaccess file*). Staging workflow runs `chmod 755` post-deploy; manual hotfix: `chmod 755` on plugin root or Cloudways **Reset permissions** → sys_user.
 - Application SSH user cannot write `/tmp`; SCP directly to plugin path.

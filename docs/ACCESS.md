@@ -68,8 +68,8 @@ After SSH login as `cursor-user`, the shell home is the app tree; CI uses a rela
 | Browser admin UI (click-through) | Cloudways dashboard → app **6528457** → WP Manager → **Get SSO login URL** | Shell loops reading `mcp.json` to call SSO REST; agent Chrome expecting your cookies |
 | Read / edit plugin on server | Novamira `read-file` / `edit-file` (project `.cursor/mcp.json`) | Repeated approval-heavy shell `cat`/`scp` for inspection |
 | WP-CLI (read-only verify) | SSH as **`cursor-user`** *or* Novamira `run-wp-cli` | Enabling `proc_open` on production clients; server `master_*` SSH for app WP-CLI |
-| Deploy to staging | `git push` → Actions (`STAGING_SSH_USER` = **`cursor-user`**) | Uncommitted Novamira hotfix without push to `main` (next CI overwrites) |
-| Emergency hotfix | Novamira `edit-file` *or* `scp` as **`cursor-user`**, then commit | SCP as `master_*`; leaving plugin dir mode **744** |
+| Deploy / test on staging | **`git commit` → `git push origin main`** → Deploy to Staging CI (~1 min). **Only** updates `breeze-smart-purge.pixelparade.dev`; MainWP clients need tag `v*`. | Novamira chunk-upload of `smart-purge-for-breeze-cache.php` (stalls); uncommitted hotfix without push |
+| Emergency hotfix (small files) | Novamira `edit-file` for `assets/admin/*` only, then **commit + push** | Novamira for full main PHP; SCP as `master_*`; leaving plugin dir mode **744** |
 | Cache purge | Cloudways MCP `app_purge_cache` (app `6528457`) | — |
 | HTTP checks (Windows) | `curl.exe -s -m 30 https://…` | Bare `curl` in PowerShell |
 | Cloudways API / credentials | `user-cloudways` MCP tools (credentials in MCP env) | `Get-Content ~/.cursor/mcp.json` in shell when MCP already covers the task |

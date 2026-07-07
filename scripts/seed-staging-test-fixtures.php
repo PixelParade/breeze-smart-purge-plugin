@@ -7,8 +7,9 @@
  *
  * Idempotent: re-running updates existing fixture pages/posts by slug.
  *
- * The test CPT must persist across requests. On staging, `wp-content/novamira-sandbox/bsp-test-cpt.php`
- * registers `bsp_test_project`. For other environments, register the CPT via a snippet, mu-plugin, or ASE CCT.
+ * The test CPT must persist across HTTP requests (admin UI, Run Smart Scan). This script registers it
+ * only for the current WP-CLI process. On staging, install the mu-plugin first — see docs/TESTING.md
+ * (`scripts/install-staging-test-mu-plugin.ps1`). For other environments, use a snippet or local mu-plugin.
  *
  * @package Breeze_Smart_Purge
  */

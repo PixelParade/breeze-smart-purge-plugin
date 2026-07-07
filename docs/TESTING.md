@@ -51,9 +51,34 @@ Staging uses the **Bricks child theme** — do not install the **Divi theme** (h
 
 **Optional later:** If PixelParade has WPBakery or Divi Builder plugin zips (not the Divi theme), upload to staging via **Plugins → Add New → Upload** to test real editor saves — fixtures already cover scanner detection via shortcode/meta patterns.
 
+### One-time staging setup (CPT mu-plugin)
+
+**Run Smart Scan** and purge-on-save tests need the `bsp_test_project` CPT registered on every request. The seed script registers it only during WP-CLI; a **must-use plugin** on staging provides persistence.
+
+| Repo path | Staging install path |
+|-----------|----------------------|
+| `scripts/staging/bsp-staging-test-cpt.php` | `wp-content/mu-plugins/bsp-staging-test-cpt.php` |
+| `scripts/staging/bsp-test-cpt.php` | `wp-content/mu-plugins/bsp-staging-test-cpt/bsp-test-cpt.php` |
+
+**Not shipped:** `scripts/` is excluded from agency and wp.org zips (`.distignore`). MainWP clients never receive this CPT.
+
+**Install (from repo root, with `.env.deploy.local`):**
+
+```powershell
+.\scripts\install-staging-test-mu-plugin.ps1
+```
+
+**Verify:**
+
+```bash
+wp post-type list --fields=name,public | grep bsp_test_project
+```
+
+The loader also checks legacy `wp-content/novamira-sandbox/bsp-test-cpt.php` if present. Prefer the mu-plugins layout above for new installs.
+
 ### Seed fixtures
 
-After deploy (or via Novamira `run-wp-cli`):
+After deploy and mu-plugin install (or via Novamira `run-wp-cli`):
 
 ```bash
 wp eval-file wp-content/plugins/smart-purge-for-breeze-cache/scripts/seed-staging-test-fixtures.php
@@ -76,6 +101,15 @@ The script is idempotent. It creates:
 
 Then runs **Run Auto-Scanner** logic and prints `bsp_scanned_map`.
 
+### Run Smart Scan expectations
+
+After mu-plugin + seed:
+
+1. **Settings → Smart Purge → Run Smart Scan** — completes without error; log panel shows hub detection progress.
+2. **Scanned map** (`bsp_scanned_map`) lists `bsp_test_project` with hub paths for all `bsp-test-*-hub` fixture pages (Gutenberg, Bricks, Elementor, Beaver, Oxygen, WPBakery, Divi).
+3. **Re-scan** after editing a fixture page — map updates; no duplicate or missing hubs.
+4. Without the mu-plugin, seed may succeed in WP-CLI but **Run Smart Scan in wp-admin will not detect CPT hubs** because `bsp_test_project` is not registered on web requests.
+
 ### Manual staging checklist (before tagging `v*`)
 
 1. **Settings → Smart Purge** — confirm scanned map lists all `bsp-test-*-hub` paths for `bsp_test_project` (Gutenberg, Bricks, Elementor, Beaver, Oxygen, WPBakery, Divi).
@@ -96,7 +130,7 @@ Then runs **Run Auto-Scanner** logic and prints `bsp_scanned_map`.
 | WPBakery (shortcode fixture) | https://breeze-smart-purge.pixelparade.dev/bsp-test-wpbakery-hub/ |
 | Divi (shortcode fixture) | https://breeze-smart-purge.pixelparade.dev/bsp-test-divi-hub/ |
 
-Persistent CPT registration: `wp-content/novamira-sandbox/bsp-test-cpt.php` on staging.
+Persistent CPT registration: mu-plugin `wp-content/mu-plugins/bsp-staging-test-cpt.php` (source in `scripts/staging/`).
 
 ## Optional — live site smoke (after rollout, not before tag)
 
@@ -117,6 +151,7 @@ Do **not** use pixelparade.co as a substitute for the staging checklist before t
 | Unit tests | `composer test` (or wait for CI green) |
 | Plugin Check | CI `plugin-check` job |
 | Zip smoke | CI `build-zips` job |
+| Staging mu-plugin (one-time) | `.\scripts\install-staging-test-mu-plugin.ps1` |
 | Staging fixtures | `wp eval-file …/seed-staging-test-fixtures.php` |
 | Staging manual | Checklist above (required before every `v*` tag) |
 | Tag + release | `git tag vX.Y.Z && git push origin vX.Y.Z` | CI verifies zips |
