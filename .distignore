@@ -7,6 +7,9 @@ docs
 scripts
 .env.deploy.example
 .env.deploy.local
+.env.mainwp.example
+.env.mainwp.local
+readme.wporg.txt
 dist
 README.md
 LICENSE

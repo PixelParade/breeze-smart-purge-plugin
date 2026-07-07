@@ -45,10 +45,10 @@ jobs:
       - name: Verify agency zip contents
         run: |
           unzip -l smart-purge-for-breeze-cache.zip | grep -E 'github-updater|includes/agency/bootstrap'
-          test ! -f build/wporg/smart-purge-for-breeze-cache/includes/github-updater.php
-          test ! -d build/wporg/smart-purge-for-breeze-cache/includes/agency
           bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache.zip
-          bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache-wporg.zip smart-purge-for-breeze-cache
+          test ! -f build/wporg/pixelparade-smart-purge-for-breeze-cache/includes/github-updater.php
+          test ! -d build/wporg/pixelparade-smart-purge-for-breeze-cache/includes/agency
+          bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache-wporg.zip pixelparade-smart-purge-for-breeze-cache
 
   phpunit:
     runs-on: ubuntu-latest

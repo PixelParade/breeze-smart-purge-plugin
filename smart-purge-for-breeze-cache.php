@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Smart Purge for Breeze Cache
+ * Plugin Name: PixelParade Smart Purge for Breeze Cache
  * Description: Intelligently purges CPT archives, taxonomies, and page-builder hub pages when content changes in Breeze Cache.
- * Version: 1.1.13
+ * Version: 1.1.14
  * Author: PixelParade LLC
  * Author URI: https://pixelparade.co
  * License: GPL v2 or later
@@ -12,6 +12,19 @@
 
 if (!defined('ABSPATH')) {
     exit;
+}
+
+if (!defined('BSP_PLUGIN_FILE')) {
+    define('BSP_PLUGIN_FILE', __FILE__);
+}
+if (!defined('BSP_PLUGIN_SLUG')) {
+    define('BSP_PLUGIN_SLUG', 'smart-purge-for-breeze-cache');
+}
+if (!defined('BSP_PLUGIN_DISPLAY_NAME')) {
+    define('BSP_PLUGIN_DISPLAY_NAME', 'PixelParade Smart Purge for Breeze Cache');
+}
+if (!defined('BSP_VERSION')) {
+    define('BSP_VERSION', '1.1.14');
 }
 
 // Agency bootstrap first — may define BSP_GITHUB_TOKEN from env or encrypted option.
@@ -31,6 +44,7 @@ if (file_exists($bsp_scanner_detection)) {
 }
 
 add_action('admin_enqueue_scripts', 'bsp_enqueue_admin_plugin_asset_styles');
+add_action('admin_enqueue_scripts', 'bsp_enqueue_settings_assets');
 
 /**
  * object-fit: cover for plugin icon/banner on Updates, Plugins, and View details screens.
@@ -56,6 +70,64 @@ function bsp_enqueue_admin_plugin_asset_styles($hook_suffix) {
 	);
 }
 
+/**
+ * Settings screen CSS/JS (scan + save AJAX).
+ *
+ * @param string $hook_suffix Current admin screen hook.
+ */
+function bsp_enqueue_settings_assets($hook_suffix) {
+	if ('settings_page_' . BSP_PLUGIN_SLUG !== $hook_suffix) {
+		return;
+	}
+
+	$css_path = __DIR__ . '/assets/admin/settings.css';
+	$js_path  = __DIR__ . '/assets/admin/settings.js';
+
+	if (file_exists($css_path)) {
+		wp_enqueue_style(
+			'bsp-settings',
+			plugins_url('assets/admin/settings.css', BSP_PLUGIN_FILE),
+			array(),
+			(string) filemtime($css_path)
+		);
+	}
+
+	if (!file_exists($js_path)) {
+		return;
+	}
+
+	wp_enqueue_script(
+		'bsp-settings',
+		plugins_url('assets/admin/settings.js', BSP_PLUGIN_FILE),
+		array(),
+		(string) filemtime($js_path),
+		true
+	);
+
+	wp_localize_script(
+		'bsp-settings',
+		'bspSettings',
+		array(
+			'ajaxUrl'    => admin_url('admin-ajax.php'),
+			'nonce'      => wp_create_nonce('bsp_save_action'),
+			'scanAction' => 'bsp_run_ajax_scan',
+			'saveAction' => 'bsp_run_ajax_save',
+			'i18n'       => array(
+				'scanning'         => __('Scanning...', 'smart-purge-for-breeze-cache'),
+				'scanInProgress'   => __('Scanning in progress... this may take a few seconds.', 'smart-purge-for-breeze-cache'),
+				'scanComplete'     => __('Scan Complete!', 'smart-purge-for-breeze-cache'),
+				'scanFailed'       => __('Scan failed. Please refresh and try again.', 'smart-purge-for-breeze-cache'),
+				'scanFailedShort'  => __('Scan failed.', 'smart-purge-for-breeze-cache'),
+				'saving'           => __('Saving...', 'smart-purge-for-breeze-cache'),
+				'saveSuccess'      => __('Settings Saved Successfully!', 'smart-purge-for-breeze-cache'),
+				'saveError'        => __('Error saving settings.', 'smart-purge-for-breeze-cache'),
+				'serverError'      => __('Server error.', 'smart-purge-for-breeze-cache'),
+				'noPagesDetected'  => '[No pages auto-detected]',
+			),
+		)
+	);
+}
+
 // ====================================================================
 // 0. DEPENDENCY CHECK, ACTIVATION & ADMIN BAR LINK
 // ====================================================================
@@ -64,7 +136,7 @@ function bsp_enqueue_admin_plugin_asset_styles($hook_suffix) {
 function bsp_check_dependencies() {
     if (!defined('BREEZE_VERSION')) {
         add_action('admin_notices', function() {
-            echo '<div class="notice notice-error"><p><strong>' . esc_html__('Smart Purge for Breeze Cache', 'smart-purge-for-breeze-cache') . '</strong> ' . esc_html__('requires the', 'smart-purge-for-breeze-cache') . ' <a href="https://wordpress.org/plugins/breeze/" target="_blank">Breeze Cache</a> ' . esc_html__('plugin to be active. Please activate it to enable smart purging.', 'smart-purge-for-breeze-cache') . '</p></div>';
+            echo '<div class="notice notice-error"><p><strong>' . esc_html(BSP_PLUGIN_DISPLAY_NAME) . '</strong> ' . esc_html__('requires the', 'smart-purge-for-breeze-cache') . ' <a href="https://wordpress.org/plugins/breeze/" target="_blank">Breeze Cache</a> ' . esc_html__('plugin to be active. Please activate it to enable smart purging.', 'smart-purge-for-breeze-cache') . '</p></div>';
         });
         return false;
     }
@@ -74,7 +146,7 @@ function bsp_check_dependencies() {
 // Add link to the Plugins page
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'bsp_add_settings_link');
 function bsp_add_settings_link($links) {
-    $settings_link = '<a href="options-general.php?page=smart-purge-for-breeze-cache">' . __('Settings', 'smart-purge-for-breeze-cache') . '</a>';
+    $settings_link = '<a href="' . esc_url(admin_url('options-general.php?page=' . BSP_PLUGIN_SLUG)) . '">' . esc_html__('Settings', 'smart-purge-for-breeze-cache') . '</a>';
     array_unshift($links, $settings_link);
     return $links;
 }
@@ -83,11 +155,10 @@ function bsp_add_settings_link($links) {
 // ADMIN BAR — Breeze dropdown on frontend + per-page clear cache
 // ====================================================================
 
-add_action('admin_bar_menu', 'bsp_invoke_breeze_admin_bar_menu', 999);
+add_action('admin_bar_menu', 'bsp_register_breeze_frontend_admin_bar', 999);
 add_action('admin_bar_menu', 'bsp_register_breeze_admin_bar_items', 1001);
 add_action('template_redirect', 'bsp_handle_frontend_breeze_purge_links');
 add_action('wp_enqueue_scripts', 'bsp_enqueue_frontend_breeze_toolbar_assets');
-add_action('wp_head', 'bsp_define_frontend_ajaxurl', 1);
 
 function bsp_breeze_toolbar_enabled() {
     if (!defined('BREEZE_VERSION') || !class_exists('Breeze_Options_Reader')) {
@@ -164,59 +235,76 @@ function bsp_get_admin_bar_context_post() {
     return ($post instanceof WP_Post) ? $post : null;
 }
 
-function bsp_prepare_breeze_toolbar_screen() {
-    if (!class_exists('WP_Screen')) {
-        require_once ABSPATH . 'wp-admin/includes/class-wp-screen.php';
-    }
-    if (!function_exists('get_current_screen')) {
-        require_once ABSPATH . 'wp-admin/includes/screen.php';
-    }
-
-    global $current_screen;
-    $saved          = $current_screen;
-    $current_screen = WP_Screen::get('front');
-
-    return $saved;
-}
-
-function bsp_invoke_breeze_admin_bar_menu($wp_admin_bar) {
+/**
+ * Register Breeze toolbar nodes on the frontend (Breeze only hooks admin by default).
+ *
+ * @param WP_Admin_Bar $wp_admin_bar Admin bar instance.
+ */
+function bsp_register_breeze_frontend_admin_bar($wp_admin_bar) {
     if (is_admin() || !bsp_breeze_toolbar_enabled() || !bsp_user_can_use_breeze_toolbar()) {
         return;
     }
-    if (!class_exists('Breeze_Admin') || $wp_admin_bar->get_node('breeze-topbar')) {
+    if ($wp_admin_bar->get_node('breeze-topbar')) {
         return;
     }
 
-    $saved_screen = bsp_prepare_breeze_toolbar_screen();
+    $wp_admin_bar->add_node(
+        array(
+            'id'    => 'breeze-topbar',
+            'title' => esc_html__('Breeze', 'breeze'),
+            'meta'  => array(
+                'classname' => 'breeze',
+            ),
+        )
+    );
 
-    try {
-        $ref   = new ReflectionClass('Breeze_Admin');
-        $admin = $ref->newInstanceWithoutConstructor();
-        $ref->getMethod('register_admin_bar_menu')->invoke($admin, $wp_admin_bar);
-        bsp_fix_breeze_toolbar_purge_hrefs($wp_admin_bar);
-    } catch (Throwable $e) {
+    $is_network = is_multisite() && is_network_admin();
+    $purge_id   = (!is_multisite() || $is_network) ? 'breeze-purge-all' : 'breeze-purge-site';
+
+    $wp_admin_bar->add_node(
+        array(
+            'id'     => $purge_id,
+            'title'  => (!is_multisite() || $is_network)
+                ? esc_html__('Purge All Cache', 'breeze')
+                : esc_html__('Purge Site Cache', 'breeze'),
+            'parent' => 'breeze-topbar',
+            'href'   => bsp_get_breeze_purge_url('breeze_purge', 'breeze_purge_cache'),
+            'meta'   => array(
+                'class' => 'breeze-toolbar-group',
+            ),
+        )
+    );
+
+    if (!current_user_can('manage_options')) {
         return;
-    } finally {
-        global $current_screen;
-        $current_screen = $saved_screen;
     }
-}
 
-function bsp_fix_breeze_toolbar_purge_hrefs($wp_admin_bar) {
-    $purge_nodes = [
-        'breeze-purge-all'        => ['breeze_purge', 'breeze_purge_cache'],
-        'breeze-purge-site'       => ['breeze_purge', 'breeze_purge_cache'],
-        'breeze-purge-cloudflare' => ['breeze_purge_cloudflare', 'breeze_purge_cache_cloudflare'],
-    ];
-
-    foreach ($purge_nodes as $id => $args) {
-        $node = $wp_admin_bar->get_node($id);
-        if (!$node) {
-            continue;
-        }
-        $node->href = bsp_get_breeze_purge_url($args[0], $args[1]);
-        $wp_admin_bar->add_node((array) $node);
+    if (!class_exists('Breeze_CloudFlare_Helper') || !Breeze_CloudFlare_Helper::is_cloudflare_enabled()) {
+        return;
     }
+
+    $wp_admin_bar->add_node(
+        array(
+            'id'     => 'breeze-purge-modules',
+            'title'  => esc_html__('Purge Modules', 'breeze'),
+            'parent' => 'breeze-topbar',
+            'meta'   => array(
+                'class' => 'breeze-toolbar-group',
+            ),
+        )
+    );
+
+    $wp_admin_bar->add_node(
+        array(
+            'id'     => 'breeze-purge-cloudflare',
+            'title'  => esc_html__('Purge Cloudflare Cache', 'breeze'),
+            'parent' => 'breeze-purge-modules',
+            'href'   => bsp_get_breeze_purge_url('breeze_purge_cloudflare', 'breeze_purge_cache_cloudflare'),
+            'meta'   => array(
+                'class' => 'breeze-toolbar-group',
+            ),
+        )
+    );
 }
 
 function bsp_register_breeze_admin_bar_items($wp_admin_bar) {
@@ -247,7 +335,7 @@ function bsp_register_breeze_admin_bar_items($wp_admin_bar) {
             'id'     => 'breeze-smart-purge-link',
             'parent' => 'breeze-topbar',
             'title'  => __('Smart Purge Settings', 'smart-purge-for-breeze-cache'),
-            'href'   => admin_url('options-general.php?page=smart-purge-for-breeze-cache'),
+            'href'   => admin_url('options-general.php?page=' . BSP_PLUGIN_SLUG),
             'meta'   => ['class' => 'breeze-toolbar-group'],
         ]);
     }
@@ -262,13 +350,6 @@ function bsp_should_load_frontend_breeze_toolbar_assets() {
         && defined('BREEZE_PLUGIN_DIR');
 }
 
-function bsp_define_frontend_ajaxurl() {
-    if (!bsp_should_load_frontend_breeze_toolbar_assets()) {
-        return;
-    }
-    echo '<script>var ajaxurl="' . esc_js(admin_url('admin-ajax.php')) . '";</script>' . "\n";
-}
-
 function bsp_enqueue_frontend_breeze_toolbar_assets() {
     if (!bsp_should_load_frontend_breeze_toolbar_assets()) {
         return;
@@ -277,6 +358,14 @@ function bsp_enqueue_frontend_breeze_toolbar_assets() {
     if (!wp_script_is('jquery', 'enqueued')) {
         wp_enqueue_script('jquery');
     }
+
+    wp_register_script('bsp-ajaxurl', false, array(), BSP_VERSION, true);
+    wp_enqueue_script('bsp-ajaxurl');
+    wp_add_inline_script(
+        'bsp-ajaxurl',
+        'var ajaxurl=' . wp_json_encode(admin_url('admin-ajax.php')) . ';',
+        'before'
+    );
 
     $min              = (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG) ? '' : '.min';
     $breeze_admin_file = BREEZE_PLUGIN_DIR . 'inc/breeze-admin.php';
@@ -291,7 +380,7 @@ function bsp_enqueue_frontend_breeze_toolbar_assets() {
     wp_enqueue_script(
         'breeze-backend',
         plugins_url('assets/js/breeze-main' . $min . '.js', $breeze_admin_file),
-        ['jquery'],
+        array('jquery', 'bsp-ajaxurl'),
         BREEZE_VERSION,
         true
     );
@@ -450,9 +539,9 @@ function bsp_display_scan_notice() {
     if ($notice = get_transient('bsp_scan_summary_notice')) {
         ?>
         <div class="notice notice-success is-dismissible">
-            <p><strong><?php esc_html_e('Smart Purge for Breeze Cache activated!', 'smart-purge-for-breeze-cache'); ?></strong> <?php esc_html_e('Initial auto-scan complete.', 'smart-purge-for-breeze-cache'); ?></p>
+            <p><strong><?php echo esc_html(sprintf(/* translators: %s: plugin display name */ __('%s activated!', 'smart-purge-for-breeze-cache'), BSP_PLUGIN_DISPLAY_NAME)); ?></strong> <?php esc_html_e('Initial auto-scan complete.', 'smart-purge-for-breeze-cache'); ?></p>
             <p>
-                <a href="<?php echo esc_url(admin_url('options-general.php?page=smart-purge-for-breeze-cache')); ?>" class="button button-primary"><?php esc_html_e('Review settings', 'smart-purge-for-breeze-cache'); ?></a>
+                <a href="<?php echo esc_url(admin_url('options-general.php?page=' . BSP_PLUGIN_SLUG)); ?>" class="button button-primary"><?php esc_html_e('Review settings', 'smart-purge-for-breeze-cache'); ?></a>
             </p>
             <p style="font-family: monospace; font-size: 13px;"><?php echo nl2br(esc_html($notice)); ?></p>
         </div>
@@ -589,10 +678,10 @@ function bsp_get_utility_post_types() {
 add_action('admin_menu', 'bsp_register_settings_page');
 function bsp_register_settings_page() {
     add_options_page(
-        __('Smart Purge for Breeze Cache', 'smart-purge-for-breeze-cache'),
+        BSP_PLUGIN_DISPLAY_NAME,
         __('Smart Purge', 'smart-purge-for-breeze-cache'),
         'manage_options',
-        'smart-purge-for-breeze-cache',
+        BSP_PLUGIN_SLUG,
         'bsp_render_settings_page'
     );
 }
@@ -610,7 +699,7 @@ function bsp_render_settings_page() {
     if (!in_array($active_tab, $allowed_tabs, true)) {
         $active_tab = 'settings';
     }
-    $settings_base_url = admin_url('options-general.php?page=smart-purge-for-breeze-cache');
+    $settings_base_url = admin_url('options-general.php?page=' . BSP_PLUGIN_SLUG);
 
     $settings = wp_parse_args(get_option('bsp_settings', []), [
         'hide_utility' => 'yes',
@@ -629,75 +718,9 @@ function bsp_render_settings_page() {
     $hidden_type_slugs = array_keys($utility_types);
 
     ?>
-    <style>
-        /* Toast Notification Styles */
-        #bsp-toast {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 4px;
-            padding: 16px;
-            position: fixed;
-            z-index: 99999;
-            left: 50%;
-            bottom: 30px;
-            transform: translateX(-50%);
-            font-size: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            opacity: 0;
-            transition: opacity 0.3s, bottom 0.3s;
-            font-weight: 500;
-        }
-        #bsp-toast.show {
-            visibility: visible;
-            opacity: 1;
-            bottom: 50px;
-        }
-        #bsp-toast.success { background-color: #46b450; border-left: 4px solid #34823b; }
-        #bsp-toast.error { background-color: #dc3232; border-left: 4px solid #a32424; }
-        .bsp-intro-details {
-            background: #fff;
-            border: 1px solid #c3c4c7;
-            box-shadow: 0 1px 1px rgba(0,0,0,.04);
-            margin: 0 0 20px;
-        }
-        .bsp-intro-details summary {
-            cursor: pointer;
-            list-style: none;
-            padding: 12px 16px;
-        }
-        .bsp-intro-details summary::-webkit-details-marker {
-            display: none;
-        }
-        .bsp-intro-summary-title {
-            display: block;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .bsp-intro-summary-hint {
-            display: block;
-            margin-top: 4px;
-            color: #646970;
-            font-weight: 400;
-            font-size: 13px;
-        }
-        .bsp-intro-body {
-            padding: 0 16px 16px 16px;
-            border-top: 1px solid #f0f0f1;
-            font-size: 14px;
-        }
-        .bsp-intro-body p {
-            margin: 12px 0 0;
-        }
-        .bsp-intro-body p:first-child {
-            margin-top: 16px;
-        }
-    </style>
 
     <div class="wrap">
-        <h1><?php esc_html_e('Smart Purge for Breeze Cache', 'smart-purge-for-breeze-cache'); ?></h1>
+        <h1><?php echo esc_html(BSP_PLUGIN_DISPLAY_NAME); ?></h1>
         <nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e('Smart Purge settings sections', 'smart-purge-for-breeze-cache'); ?>">
             <a href="<?php echo esc_url(add_query_arg('tab', 'settings', $settings_base_url)); ?>" class="nav-tab<?php echo 'settings' === $active_tab ? ' nav-tab-active' : ''; ?>">
                 <?php esc_html_e('Smart Purge', 'smart-purge-for-breeze-cache'); ?>
@@ -715,7 +738,7 @@ function bsp_render_settings_page() {
         <details class="bsp-intro-details">
             <summary>
                 <span class="bsp-intro-summary-title"><?php esc_html_e('What does Smart Purge do?', 'smart-purge-for-breeze-cache'); ?></span>
-                <span class="bsp-intro-summary-hint"><?php esc_html_e('Clears hub pages, grids, and archives when you update posts — expand for details.', 'smart-purge-for-breeze-cache'); ?></span>
+                <span class="bsp-intro-summary-hint"><?php esc_html_e('Clears hub pages, grids, and archives when you update posts - expand for details.', 'smart-purge-for-breeze-cache'); ?></span>
             </summary>
             <div class="bsp-intro-body">
                 <p><strong><?php esc_html_e('The Problem:', 'smart-purge-for-breeze-cache'); ?></strong> <?php esc_html_e('By default, Breeze aggressively caches content. When you update a post, it only clears the cache for that specific post. This leaves your important hub pages like: post grids, custom taxonomy archives, and page builder layouts, serving stale content to users.', 'smart-purge-for-breeze-cache'); ?></p>
@@ -827,98 +850,7 @@ function bsp_render_settings_page() {
     </div>
 
     <?php if ('settings' === $active_tab) : ?>
-    <div id="bsp-toast">Message</div>
-
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Universal Toast Function
-        function bspEscapeHtml(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        function bspShowToast(msg, type = 'success') {
-            var toast = document.getElementById("bsp-toast");
-            toast.textContent = msg;
-            toast.className = type + " show";
-            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
-        }
-
-        // AJAX SCAN HANDLER
-        document.getElementById('bsp-btn-scan').addEventListener('click', function() {
-            var btn = this;
-            var logText = document.getElementById('bsp-scan-log-text');
-            var originalBtnText = btn.textContent;
-            
-            btn.textContent = 'Scanning...';
-            btn.style.pointerEvents = 'none';
-            logText.textContent = 'Scanning in progress... this may take a few seconds.';
-
-            var data = new FormData();
-            data.append('action', 'bsp_run_ajax_scan');
-            data.append('_wpnonce', document.getElementById('_wpnonce').value);
-
-            fetch(ajaxurl, { method: 'POST', body: data })
-            .then(response => response.json())
-            .then(res => {
-                if(res.success) {
-                    logText.innerHTML = bspEscapeHtml(res.data.log).replace(/\n/g, '<br>');
-                    // Clear all readonly boxes, then repopulate
-                    document.querySelectorAll('textarea[id^="scanned-map-"]').forEach(ta => ta.value = '[No pages auto-detected]');
-                    for (const [postType, urls] of Object.entries(res.data.map)) {
-                        var ta = document.getElementById('scanned-map-' + postType);
-                        if (ta && urls.length > 0) ta.value = urls.join('\n');
-                    }
-                    bspShowToast('Scan Complete!', 'success');
-                } else {
-                    logText.innerHTML = '<span style="color:red;">Scan failed. Please refresh and try again.</span>';
-                    bspShowToast('Scan failed.', 'error');
-                }
-                btn.textContent = originalBtnText;
-                btn.style.pointerEvents = 'auto';
-            }).catch(err => {
-                bspShowToast('Server error.', 'error');
-                btn.textContent = originalBtnText;
-                btn.style.pointerEvents = 'auto';
-            });
-        });
-
-        // AJAX SAVE HANDLER (Applies to both top and bottom save buttons)
-        document.querySelectorAll('.bsp-btn-save').forEach(btn => {
-            btn.addEventListener('click', function() {
-                var currentBtn = this;
-                var originalBtnText = currentBtn.textContent;
-                
-                currentBtn.textContent = 'Saving...';
-                currentBtn.style.pointerEvents = 'none';
-
-                var form = document.getElementById('bsp-settings-form');
-                var data = new FormData(form);
-                data.append('action', 'bsp_run_ajax_save');
-
-                fetch(ajaxurl, { method: 'POST', body: data })
-                .then(response => response.json())
-                .then(res => {
-                    if(res.success) {
-                        bspShowToast('Settings Saved Successfully!', 'success');
-                    } else {
-                        bspShowToast('Error saving settings.', 'error');
-                    }
-                    currentBtn.textContent = originalBtnText;
-                    currentBtn.style.pointerEvents = 'auto';
-                }).catch(err => {
-                    bspShowToast('Server error.', 'error');
-                    currentBtn.textContent = originalBtnText;
-                    currentBtn.style.pointerEvents = 'auto';
-                });
-            });
-        });
-    });
-    </script>
+    <div id="bsp-toast" aria-live="polite"></div>
     <?php endif; ?>
     <?php
 }

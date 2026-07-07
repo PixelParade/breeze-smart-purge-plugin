@@ -25,7 +25,7 @@ jobs:
       - name: Verify zip structure (no backslashes / correct root)
         run: |
           bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache.zip
-          bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache-wporg.zip smart-purge-for-breeze-cache
+          bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache-wporg.zip pixelparade-smart-purge-for-breeze-cache
 
       - name: Create GitHub Release
         id: gh_release

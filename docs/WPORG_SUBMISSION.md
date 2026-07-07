@@ -6,7 +6,7 @@ Use this for the **public** [wordpress.org plugin directory](https://wordpress.o
 
 1. Log in at [wordpress.org/plugins/developers/add/](https://wordpress.org/plugins/developers/add/).
 2. **Plugin name (display):** `Smart Purge for Breeze Cache`
-3. **Requested slug:** prefer `smart-purge-for-breeze-cache` if available (describes the add-on clearly and avoids implying official Breeze authorship).
+3. **Requested slug:** `pixelparade-smart-purge-for-breeze-cache` (distinctive prefix; unofficial add-on for Breeze Cache).
 4. Agree to the [plugin guidelines](https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/).
 5. Set `Contributors:` in `readme.txt` to your **wordpress.org username** (`kevpress88` for this project).
 
@@ -102,6 +102,7 @@ CI: `plugin-check.yml` tests the **wporg** tree. `release.yml` produces **both**
 
 Client rollout policy: [MAINWP_ROLLOUT.md](MAINWP_ROLLOUT.md).
 
-**Future wp.org releases:** feature backlog and checklists — [WPORG_BACKLOG.md](WPORG_BACKLOG.md).
+**Future wp.org releases:** feature backlog and checklists — [WPORG_BACKLOG.md](WPORG_BACKLOG.md).  
+**Review response (Jul 2026):** upload checklist and reply draft — [WPORG_REVIEW_REPLY.md](WPORG_REVIEW_REPLY.md).
 
 Bump `Version:` in the plugin header and `Stable tag:` in `readme.txt` together for each wordpress.org release. MainWP client versions may run ahead on GitHub tags.

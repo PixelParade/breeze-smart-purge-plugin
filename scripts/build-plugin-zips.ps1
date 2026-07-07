@@ -63,16 +63,92 @@ function Copy-PluginTree {
     }
 }
 
+function Apply-WporgFinalize {
+    param(
+        [string]$PluginDir,
+        [string]$TargetVersion = '1.0.0'
+    )
+
+    $slug = Split-Path $PluginDir -Leaf
+    $mainFile = Join-Path $PluginDir "$slug.php"
+    if (-not (Test-Path $mainFile)) {
+        $mainFile = Get-ChildItem -Path $PluginDir -Filter '*.php' | Select-Object -First 1 -ExpandProperty FullName
+    }
+
+    $mainContent = [System.IO.File]::ReadAllText($mainFile)
+    $mainContent = [regex]::Replace($mainContent, '(?m)^ \* Version: .*', " * Version: $TargetVersion")
+    $mainContent = [regex]::Replace($mainContent, "define\('BSP_VERSION', '[^']*'\)", "define('BSP_VERSION', '$TargetVersion')")
+    [System.IO.File]::WriteAllText($mainFile, $mainContent)
+
+    $readmeWporg = Join-Path $repoRoot 'readme.wporg.txt'
+    if (Test-Path $readmeWporg) {
+        Copy-Item $readmeWporg (Join-Path $PluginDir 'readme.txt') -Force
+    }
+
+    Write-Host "Wporg finalize: $(Split-Path $PluginDir -Leaf) ($TargetVersion)"
+}
+
+function Apply-WporgTransform {
+    param(
+        [string]$WporgParent,
+        [string]$AgencySlug,
+        [string]$TargetSlug,
+        [string]$TargetVersion = '1.0.0'
+    )
+
+    $srcDir = Join-Path $WporgParent $AgencySlug
+    $destDir = Join-Path $WporgParent $TargetSlug
+
+    if (-not (Test-Path $srcDir)) {
+        throw "Missing wporg build folder: $srcDir"
+    }
+
+    Move-Item -Path $srcDir -Destination $destDir
+    Move-Item -Path (Join-Path $destDir "$AgencySlug.php") -Destination (Join-Path $destDir "$TargetSlug.php")
+
+    Get-ChildItem -Path $destDir -Recurse -File | Where-Object {
+        $_.Extension -in '.php', '.txt'
+    } | ForEach-Object {
+        $content = [System.IO.File]::ReadAllText($_.FullName)
+        $content = $content -replace [regex]::Escape($AgencySlug), $TargetSlug
+        [System.IO.File]::WriteAllText($_.FullName, $content)
+    }
+
+    $mainFile = Join-Path $destDir "$TargetSlug.php"
+    $mainContent = [System.IO.File]::ReadAllText($mainFile)
+    $mainContent = [regex]::Replace($mainContent, '(?m)^ \* Version: .*', " * Version: $TargetVersion")
+    $mainContent = [regex]::Replace($mainContent, "define\('BSP_VERSION', '[^']*'\)", "define('BSP_VERSION', '$TargetVersion')")
+    [System.IO.File]::WriteAllText($mainFile, $mainContent)
+
+    $readmeWporg = Join-Path $repoRoot 'readme.wporg.txt'
+    if (Test-Path $readmeWporg) {
+        Copy-Item $readmeWporg (Join-Path $destDir 'readme.txt') -Force
+    }
+
+    Write-Host "Wporg transform complete: $TargetSlug ($TargetVersion)"
+}
+
 if (Test-Path $buildRoot) {
     Remove-Item $buildRoot -Recurse -Force
 }
 
 $wporgExcludes = Read-Distignore (Join-Path $repoRoot '.distignore.wporg')
+$wporgApprovedSlug = 'pixelparade-smart-purge-for-breeze-cache'
 $agencyDir = Join-Path $buildRoot "agency\$PluginSlug"
-$wporgDir = Join-Path $buildRoot "wporg\$PluginSlug"
+$wporgParent = Join-Path $buildRoot 'wporg'
+$wporgDir = Join-Path $wporgParent $PluginSlug
+$wporgApprovedZip = "${wporgApprovedSlug}-wporg.zip"
 
 Copy-PluginTree -Destination $agencyDir
 Copy-PluginTree -Destination $wporgDir -ExtraExcludes $wporgExcludes
+Apply-WporgFinalize -PluginDir $wporgDir
+
+# Post-approval slug package (after pixelparade-smart-purge-for-breeze-cache is reserved on wp.org).
+$wporgApprovedParent = Join-Path $buildRoot 'wporg-approved'
+$wporgApprovedStage = Join-Path $wporgApprovedParent $PluginSlug
+Copy-Item -Path $wporgDir -Destination $wporgApprovedStage -Recurse -Force
+Apply-WporgTransform -WporgParent $wporgApprovedParent -AgencySlug $PluginSlug -TargetSlug $wporgApprovedSlug
+$wporgApprovedDir = Join-Path $wporgApprovedParent $wporgApprovedSlug
 
 function New-PluginZip {
     param(
@@ -107,7 +183,9 @@ function New-PluginZip {
 
 New-PluginZip -SourceDir $agencyDir -ZipPath $agencyZip -EntryPrefix $PluginSlug
 New-PluginZip -SourceDir $wporgDir -ZipPath $wporgZip -EntryPrefix $PluginSlug
+New-PluginZip -SourceDir $wporgApprovedDir -ZipPath $wporgApprovedZip -EntryPrefix $wporgApprovedSlug
 
 Write-Host "Done."
-Write-Host "  Agency (MainWP / GitHub Releases): $agencyZip"
-Write-Host "  wordpress.org (SVN):               $wporgZip"
+Write-Host "  Agency (MainWP / GitHub Releases):     $agencyZip"
+Write-Host "  wordpress.org upload (pending slug):   $wporgZip"
+Write-Host "  wordpress.org post-approval slug:      $wporgApprovedZip"
