@@ -5,6 +5,7 @@ smart-purge-for-breeze-cache.zip
 smart-purge-for-breeze-cache-wporg.zip
 .env
 .env.deploy.local
+.env.mainwp.local
 .DS_Store
 Thumbs.db
 .idea/

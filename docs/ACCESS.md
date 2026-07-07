@@ -2,6 +2,8 @@
 
 Use **SSH** for filesystem deploys and **WordPress REST / remote tools** for in-app reads. Never commit credentials to git.
 
+**Agent auto-approve:** Staging verification on `breeze-smart-purge.pixelparade.dev` (Novamira read-only, Cloudways `app_purge_cache`, SSH WP-CLI, browser checks) is pre-approved in user `~/.cursor/permissions.json` and the **Auto-approve staging verification (Breeze Smart Purge)** user rule — credentials must never appear in terminal output or commits.
+
 ## WordPress remote API (staging)
 
 **Config:** `.cursor/mcp.json` from `.cursor/mcp.json.example` (gitignored when it contains secrets).
@@ -70,7 +72,7 @@ Preferred: **SSH key** deploy (see `scripts/setup-github-secrets.ps1`).
 | `STAGING_SSH_KEY` | Private deploy key (preferred) |
 | `STAGING_SSH_PASSWORD` | Fallback only — rotate if exposed |
 
-Current workflow deploys the **agency** tree (`smart-purge-for-breeze-cache.php`, `readme.txt`, `includes/`) to `public_html/wp-content/plugins/smart-purge-for-breeze-cache/`.
+Current workflow deploys the **agency** tree (`smart-purge-for-breeze-cache.php`, `readme.txt`, `includes/`, `assets/`) to `public_html/wp-content/plugins/smart-purge-for-breeze-cache/`, then normalizes permissions (`755` dirs / `644` files).
 
 MainWP client rollout: [MAINWP_ROLLOUT.md](MAINWP_ROLLOUT.md).
 
@@ -115,6 +117,8 @@ WP-CLI and Novamira can exercise AJAX handlers without a browser session. For **
 | **Dashboard SSO (fastest manual)** | Cloudways → app **6528457** → **Access Details** / WP Manager → **Get SSO login URL** for `kevin@pixelparade.co` → open link → **Settings → Smart Purge** |
 
 Settings page: `wp-admin/options-general.php?page=smart-purge-for-breeze-cache`
+
+**Staging 403 on plugin assets (Jul 2026):** If `settings.css` / `settings.js` return 403 on both `breeze-smart-purge.pixelparade.dev` and `wordpress-1305358-6528457.cloudwaysapps.com`, check the plugin folder mode — `wp-content/plugins/smart-purge-for-breeze-cache` must be **755** (not 744) so `www-data` can traverse it. Apache error: *Server unable to read htaccess file, denying access to be safe*. Fix: `chmod 755` on the plugin root (or Cloudways **Reset permissions** → sys_user). External Cloudflare on `pixelparade.dev` proxies the origin; fixing permissions resolves both hostnames.
 
 ## Verify deploys
 

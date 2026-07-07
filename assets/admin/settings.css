@@ -1,4 +1,4 @@
-/* Smart Purge settings screen — enqueued on admin only. */
+/* Smart Purge settings screen — enqueued on admin only. Cache-bust 2026-07-07 */
 #bsp-toast {
 	visibility: hidden;
 	min-width: 250px;
@@ -82,4 +82,8 @@
 
 .bsp-scan-log-error {
 	color: #dc3232;
+}
+
+.bsp-scan-progress {
+	color: #ffff66;
 }

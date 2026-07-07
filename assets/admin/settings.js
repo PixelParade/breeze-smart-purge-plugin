@@ -1,9 +1,12 @@
+/* BSP realtime scan polling — cache-bust touch 2026-07-07 */
 (function () {
 	'use strict';
 
 	if (typeof bspSettings === 'undefined') {
 		return;
 	}
+
+	var bspScanPollTimer = null;
 
 	function bspEscapeHtml(str) {
 		return String(str)
@@ -26,7 +29,75 @@
 		}, 3000);
 	}
 
-	document.addEventListener('DOMContentLoaded', function () {
+	function bspGetScanLogContainer(logText) {
+		return logText.closest('[style*="overflow-y"]') || logText.parentElement;
+	}
+
+	function bspRenderScanLog(logText, log, progress) {
+		var html = bspEscapeHtml(log || '');
+		if (progress) {
+			html += (html ? '<br>' : '') + '<span class="bsp-scan-progress">' + bspEscapeHtml(progress) + '</span>';
+		}
+		logText.innerHTML = html.replace(/\n/g, '<br>');
+
+		var container = bspGetScanLogContainer(logText);
+		if (container) {
+			container.scrollTop = container.scrollHeight;
+		}
+	}
+
+	function bspStopScanPoll() {
+		if (bspScanPollTimer) {
+			clearInterval(bspScanPollTimer);
+			bspScanPollTimer = null;
+		}
+	}
+
+	function bspStartScanPoll(logText) {
+		bspStopScanPoll();
+
+		bspScanPollTimer = setInterval(function () {
+			var statusData = new FormData();
+			statusData.append('action', bspSettings.statusAction);
+			statusData.append('_wpnonce', bspSettings.nonce);
+
+			fetch(bspSettings.ajaxUrl, { method: 'POST', body: statusData })
+				.then(function (response) {
+					return response.json();
+				})
+				.then(function (res) {
+					if (!res.success || !res.data) {
+						return;
+					}
+
+					if (res.data.status === 'running') {
+						bspRenderScanLog(logText, res.data.log, res.data.progress);
+					}
+				})
+				.catch(function () {
+					// Polling errors are non-fatal; the main scan request still runs.
+				});
+		}, 500);
+	}
+
+	function bspApplyScannedMap(map) {
+		document.querySelectorAll('textarea[id^="scanned-map-"]').forEach(function (ta) {
+			ta.value = bspSettings.i18n.noPagesDetected;
+		});
+
+		for (var postType in map) {
+			if (!Object.prototype.hasOwnProperty.call(map, postType)) {
+				continue;
+			}
+			var urls = map[postType];
+			var textarea = document.getElementById('scanned-map-' + postType);
+			if (textarea && urls.length > 0) {
+				textarea.value = urls.join('\n');
+			}
+		}
+	}
+
+	function bspInitSettingsUi() {
 		var scanBtn = document.getElementById('bsp-btn-scan');
 		if (scanBtn) {
 			scanBtn.addEventListener('click', function () {
@@ -34,9 +105,14 @@
 				var logText = document.getElementById('bsp-scan-log-text');
 				var originalBtnText = btn.textContent;
 
+				if (!logText) {
+					return;
+				}
+
 				btn.textContent = bspSettings.i18n.scanning;
 				btn.style.pointerEvents = 'none';
-				logText.textContent = bspSettings.i18n.scanInProgress;
+				bspRenderScanLog(logText, '', bspSettings.i18n.scanStarting);
+				bspStartScanPoll(logText);
 
 				var data = new FormData();
 				data.append('action', bspSettings.scanAction);
@@ -47,21 +123,11 @@
 						return response.json();
 					})
 					.then(function (res) {
+						bspStopScanPoll();
+
 						if (res.success) {
-							logText.innerHTML = bspEscapeHtml(res.data.log).replace(/\n/g, '<br>');
-							document.querySelectorAll('textarea[id^="scanned-map-"]').forEach(function (ta) {
-								ta.value = bspSettings.i18n.noPagesDetected;
-							});
-							for (var postType in res.data.map) {
-								if (!Object.prototype.hasOwnProperty.call(res.data.map, postType)) {
-									continue;
-								}
-								var urls = res.data.map[postType];
-								var textarea = document.getElementById('scanned-map-' + postType);
-								if (textarea && urls.length > 0) {
-									textarea.value = urls.join('\n');
-								}
-							}
+							bspRenderScanLog(logText, res.data.log, '');
+							bspApplyScannedMap(res.data.map);
 							bspShowToast(bspSettings.i18n.scanComplete, 'success');
 						} else {
 							logText.innerHTML = '<span class="bsp-scan-log-error">' + bspEscapeHtml(bspSettings.i18n.scanFailed) + '</span>';
@@ -71,6 +137,7 @@
 						btn.style.pointerEvents = 'auto';
 					})
 					.catch(function () {
+						bspStopScanPoll();
 						bspShowToast(bspSettings.i18n.serverError, 'error');
 						btn.textContent = originalBtnText;
 						btn.style.pointerEvents = 'auto';
@@ -110,5 +177,11 @@
 					});
 			});
 		});
-	});
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', bspInitSettingsUi);
+	} else {
+		bspInitSettingsUi();
+	}
 })();

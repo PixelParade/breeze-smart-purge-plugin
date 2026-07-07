@@ -2,7 +2,7 @@
 /**
  * Plugin Name: PixelParade Smart Purge for Breeze Cache
  * Description: Intelligently purges CPT archives, taxonomies, and page-builder hub pages when content changes in Breeze Cache.
- * Version: 1.1.14
+ * Version: 1.1.15
  * Author: PixelParade LLC
  * Author URI: https://pixelparade.co
  * License: GPL v2 or later
@@ -110,10 +110,12 @@ function bsp_enqueue_settings_assets($hook_suffix) {
 		array(
 			'ajaxUrl'    => admin_url('admin-ajax.php'),
 			'nonce'      => wp_create_nonce('bsp_save_action'),
-			'scanAction' => 'bsp_run_ajax_scan',
-			'saveAction' => 'bsp_run_ajax_save',
-			'i18n'       => array(
+			'scanAction'   => 'bsp_run_ajax_scan',
+			'statusAction' => 'bsp_ajax_scan_status',
+			'saveAction'   => 'bsp_run_ajax_save',
+			'i18n'         => array(
 				'scanning'         => __('Scanning...', 'smart-purge-for-breeze-cache'),
+				'scanStarting'     => __('Starting scan...', 'smart-purge-for-breeze-cache'),
 				'scanInProgress'   => __('Scanning in progress... this may take a few seconds.', 'smart-purge-for-breeze-cache'),
 				'scanComplete'     => __('Scan Complete!', 'smart-purge-for-breeze-cache'),
 				'scanFailed'       => __('Scan failed. Please refresh and try again.', 'smart-purge-for-breeze-cache'),
@@ -859,7 +861,42 @@ function bsp_render_settings_page() {
 // 4. THE AUTO-SCANNER ALGORITHM
 // ====================================================================
 
-function bsp_execute_auto_scanner($settings) {
+/**
+ * Store in-progress scan log for polling (TTL 5 minutes).
+ *
+ * @param string $log      Accumulated log lines.
+ * @param string $progress Current page / phase message.
+ * @param string $status   running|complete|error|idle.
+ * @param array|null $map  Scanned map when complete.
+ */
+function bsp_scan_progress_set( $log, $progress = '', $status = 'running', $map = null ) {
+    $data = array(
+        'status'   => $status,
+        'log'      => $log,
+        'progress' => $progress,
+    );
+    if ( null !== $map ) {
+        $data['map'] = $map;
+    }
+    set_transient( 'bsp_scan_progress', $data, 300 );
+}
+
+/**
+ * @return array{status:string,log:string,progress:string,map?:array}
+ */
+function bsp_scan_progress_get() {
+    $progress = get_transient( 'bsp_scan_progress' );
+    if ( ! is_array( $progress ) ) {
+        return array(
+            'status'   => 'idle',
+            'log'      => '',
+            'progress' => '',
+        );
+    }
+    return $progress;
+}
+
+function bsp_execute_auto_scanner( $settings, $progress_callback = null ) {
     $scanned_map = [];
     $public_post_types = get_post_types(['public' => true], 'names');
     
@@ -872,12 +909,19 @@ function bsp_execute_auto_scanner($settings) {
         'posts_per_page' => -1
     ]);
 
+    $total_pages = count( $pages );
     $log_output = "Scan initiated at " . current_time('mysql') . "\n";
-    $log_output .= "Total Pages to scan: " . count($pages) . "\n";
+    $log_output .= "Total Pages to scan: " . $total_pages . "\n";
     $log_output .= "----------------------------------------\n";
     $relations_found = 0;
 
+    if ( is_callable( $progress_callback ) ) {
+        $progress_callback( $log_output, __( 'Preparing scan...', 'smart-purge-for-breeze-cache' ) );
+    }
+
+    $page_index = 0;
     foreach ($pages as $page) {
+        $page_index++;
         $content = $page->post_content;
         
         $page_path = wp_parse_url(get_permalink($page->ID), PHP_URL_PATH);
@@ -917,8 +961,34 @@ function bsp_execute_auto_scanner($settings) {
                     $b_names = implode(' & ', array_unique($found_builders));
                     $log_output .= "[DETECTED] $b_names mapped '$pt' to $page_path \n";
                     $relations_found++;
+
+                    if ( is_callable( $progress_callback ) ) {
+                        $progress_callback(
+                            $log_output,
+                            sprintf(
+                                /* translators: 1: current page number, 2: total pages, 3: page title */
+                                __( 'Scanning page %1$d of %2$d: %3$s', 'smart-purge-for-breeze-cache' ),
+                                $page_index,
+                                $total_pages,
+                                $page->post_title
+                            )
+                        );
+                    }
                 }
             }
+        }
+
+        if ( is_callable( $progress_callback ) ) {
+            $progress_callback(
+                $log_output,
+                sprintf(
+                    /* translators: 1: current page number, 2: total pages, 3: page title */
+                    __( 'Scanning page %1$d of %2$d: %3$s', 'smart-purge-for-breeze-cache' ),
+                    $page_index,
+                    $total_pages,
+                    $page->post_title
+                )
+            );
         }
     }
 
@@ -939,13 +1009,36 @@ function bsp_ajax_scan_handler() {
     if (!current_user_can('manage_options')) wp_send_json_error();
     
     $settings = wp_parse_args(get_option('bsp_settings', []), ['hide_utility' => 'yes', 'force_sync' => 'yes']);
-    $log = bsp_execute_auto_scanner($settings);
+
+    $progress_callback = function ( $log, $progress ) {
+        bsp_scan_progress_set( $log, $progress, 'running' );
+    };
+
+    bsp_scan_progress_set(
+        "Scan initiated at " . current_time( 'mysql' ) . "\n",
+        __( 'Starting scan...', 'smart-purge-for-breeze-cache' ),
+        'running'
+    );
+
+    $log = bsp_execute_auto_scanner( $settings, $progress_callback );
     update_option('bsp_scan_log', $log, false);
+
+    $scanned_map = get_option( 'bsp_scanned_map', [] );
+    bsp_scan_progress_set( $log, '', 'complete', $scanned_map );
     
     wp_send_json_success([
         'log' => esc_html($log),
-        'map' => get_option('bsp_scanned_map', [])
+        'map' => $scanned_map,
     ]);
+}
+
+add_action('wp_ajax_bsp_ajax_scan_status', 'bsp_ajax_scan_status_handler');
+function bsp_ajax_scan_status_handler() {
+    check_ajax_referer('bsp_save_action', '_wpnonce');
+    if (!current_user_can('manage_options')) wp_send_json_error();
+
+    $progress = bsp_scan_progress_get();
+    wp_send_json_success( $progress );
 }
 
 add_action('wp_ajax_bsp_run_ajax_save', 'bsp_ajax_save_handler');
@@ -1012,6 +1105,7 @@ function bsp_plugin_uninstall() {
     delete_option('bsp_scan_log');
     delete_option('bsp_needs_initial_scan');
     delete_transient('bsp_scan_summary_notice');
+    delete_transient('bsp_scan_progress');
     delete_transient('bsp_github_release');
 }
 

@@ -12,6 +12,10 @@ alwaysApply: true
 - **Three lanes:** `main` → staging CI (agency tree); tag `v*` → agency zip → MainWP clients; wporg zip → SVN for external users. See `docs/MAINWP_ROLLOUT.md` and `docs/WPORG_SUBMISSION.md`.
 - **MainWP clients:** agency build only — `BSP_GITHUB_TOKEN`, never wordpress.org install for this plugin.
 
+## Staging verification (pre-approved for agents)
+
+Read-only checks on `breeze-smart-purge.pixelparade.dev` (WP-CLI, Novamira, Cloudways cache purge, browser snapshot) are auto-allowed — see `docs/ACCESS.md`. Never echo passwords or API keys in output.
+
 ## After every deploy or significant PHP change
 
 1. `cd public_html && wp plugin list | grep smart-purge`
@@ -33,6 +37,7 @@ Emergency hotfix: SCP to `public_html/wp-content/plugins/smart-purge-for-breeze-
 ## Staging deploy
 
 - On Windows PowerShell, `curl` is `Invoke-WebRequest` (no timeout) — use `curl.exe -s -m 30` for HTTP fetches or agents hang on slow endpoints.
+- **After SCP/CI deploy:** plugin root must be mode **755** (not 744) or Apache/`www-data` cannot traverse `wp-content/plugins/smart-purge-for-breeze-cache/` — `settings.css` / `settings.js` return **403** (*Server unable to read htaccess file*). Staging workflow runs `chmod 755` post-deploy; manual hotfix: `chmod 755` on plugin root or Cloudways **Reset permissions** → sys_user.
 - Application SSH user cannot write `/tmp`; SCP directly to plugin path.
 - Cloudways master keys may not match application user keys; Actions may use password or deploy key per `docs/ACCESS.md`.
 - Pull script: `scripts/pull-from-staging.ps1` (pscp, then plink fallback).
@@ -47,7 +52,23 @@ Emergency hotfix: SCP to `public_html/wp-content/plugins/smart-purge-for-breeze-
 
 - Display name: **Smart Purge for Breeze Cache**; first directory release **1.0.0**; contributor **kevpress88**.
 - wporg zip excludes updater + `includes/agency/` (`.distignore.wporg`); see `docs/WPORG_SUBMISSION.md` and `docs/SECURITY.md`.
+- **Fold agency fixes into wporg:** `smart-purge-for-breeze-cache.php`, `assets/admin/settings.js`, `assets/admin/settings.css`, and `readme.txt` / `readme.wporg.txt` ship in the wporg zip — scan polling, DOMContentLoaded init, and progress transients are **not** agency-only. Rebuild `smart-purge-for-breeze-cache-wporg.zip` after merge; staging `deploy-staging.yml` chmod step does not apply to wp.org SVN.
 - MainWP client policy: `docs/MAINWP_ROLLOUT.md`.
+
+## Incident: staging admin UI broken after wp.org extract (Jul 2026)
+
+**Symptoms:** Run Smart Scan does nothing; DevTools shows `settings.js` / `settings.css` **403**; log panel static until scan completes.
+
+**Root causes (stacked):**
+
+1. **Footer-enqueued JS + `DOMContentLoaded` only** — wp.org review moved inline admin JS to `assets/admin/settings.js` enqueued in footer; handlers registered only on `DOMContentLoaded`, which had often already fired → button dead.
+2. **Plugin folder mode 744 after SCP** — `www-data` could not enter plugin directory → all assets 403 (Cloudflare on `pixelparade.dev` proxied the same origin error; not a WAF rule).
+3. **Novamira hotfix without git commit** — next CI deploy to staging could revert JS/PHP fixes until pushed to `main`.
+4. **First staging deploy omitted `assets/`** — enqueued scripts 404 until workflow included `assets/` (commit `1675c1a`).
+
+**Fixes shipped (v1.1.15):** `bspInitSettingsUi()` runs immediately when DOM ready; scan progress transient + `bsp_ajax_scan_status` polling for live log; post-deploy `chmod 755` in `deploy-staging.yml`.
+
+**Prevention:** Browser check after deploy (Network tab: `settings.js` **200**); never leave staging fixes uncommitted; verify plugin dir is 755 after any SCP.
 
 ## Incident: bad zip rollout (Jul 2026)
 
