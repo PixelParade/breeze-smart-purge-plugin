@@ -87,3 +87,64 @@
 .bsp-scan-progress {
 	color: #ffff66;
 }
+
+.bsp-utility-details {
+	margin: 0 0 20px;
+	border: 1px solid #e2e4e7;
+	border-radius: 4px;
+	background: #f9f9f9;
+}
+
+.bsp-utility-details summary {
+	cursor: pointer;
+	list-style: none;
+	padding: 10px 12px;
+}
+
+.bsp-utility-details summary::-webkit-details-marker {
+	display: none;
+}
+
+.bsp-utility-summary-title {
+	display: block;
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.bsp-utility-summary-hint {
+	display: block;
+	margin-top: 4px;
+	color: #646970;
+	font-weight: 400;
+	font-size: 12px;
+}
+
+.bsp-utility-body {
+	padding: 0 12px 12px;
+	border-top: 1px solid #e2e4e7;
+}
+
+.bsp-utility-body .description {
+	margin: 10px 0 8px;
+}
+
+.bsp-utility-type-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.bsp-utility-type-list li {
+	margin: 0 0 6px;
+}
+
+.bsp-utility-type-list label {
+	font-size: 13px;
+}
+
+.bsp-utility-type-list code {
+	margin-left: 4px;
+	background: #f0f0f1;
+	padding: 2px 5px;
+	font-size: 12px;
+}

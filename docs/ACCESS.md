@@ -45,6 +45,38 @@ Hostname must be `breeze-smart-purge.pixelparade.dev` before any staging operati
 | GitHub Actions deploy | secrets below |
 | WP-CLI on server | `wp plugin list` (SSH) or Novamira `run-wp-cli` (see below) |
 
+### SSH users (staging app 6528457)
+
+Cloudways exposes **three different names** — do not confuse them:
+
+| Name | What it is | When to use |
+|------|------------|-------------|
+| **`cursor-user`** | Application SSH login (custom deploy user; key label *Github Cursor*) | **Default for agents, CI, and local deploy/pull.** Set `STAGING_SSH_USER=cursor-user` in `.env.deploy.local` and GitHub Actions secrets. |
+| **`tyaxssmjcp`** | Application **sys_user** / on-disk folder (`applications/tyaxssmjcp/public_html`) | **Paths only** — `STAGING_APP_ID`, full `STAGING_REMOTE_PLUGIN_PATH`. Not the SSH username for deploy. |
+| **`master_jkzyxsmfqk`** | Server **master** SSH user (server `1305358`) | Server-wide ops (php.ini, all apps). Master keys often **do not** work for application SCP — use `cursor-user` instead. |
+
+After SSH login as `cursor-user`, the shell home is the app tree; CI uses a relative plugin path (`public_html/wp-content/plugins/smart-purge-for-breeze-cache/`). Local scripts may use the full path from `.env.deploy.example`.
+
+## Efficient staging workflow (agents + humans)
+
+**Why things feel "blocked":** Cursor Auto-review still prompts on some shell patterns (e.g. reading `~/.cursor/mcp.json` via PowerShell — labeled *run cfg converter*) even when user rules allow it. Cloudways WP Manager SSO has no MCP tool and the REST path is unresolved for agents. Agent browser tools use a **separate** session from your logged-in Chrome. On Windows, `curl` is an alias for `Invoke-WebRequest` with **no timeout** and can hang.
+
+**Default order:** Novamira MCP → Cloudways MCP → SSH with `cursor-user` → manual dashboard SSO for browser.
+
+| Task | Use | Don't use |
+|------|-----|-----------|
+| Browser admin UI (click-through) | Cloudways dashboard → app **6528457** → WP Manager → **Get SSO login URL** | Shell loops reading `mcp.json` to call SSO REST; agent Chrome expecting your cookies |
+| Read / edit plugin on server | Novamira `read-file` / `edit-file` (project `.cursor/mcp.json`) | Repeated approval-heavy shell `cat`/`scp` for inspection |
+| WP-CLI (read-only verify) | SSH as **`cursor-user`** *or* Novamira `run-wp-cli` | Enabling `proc_open` on production clients; server `master_*` SSH for app WP-CLI |
+| Deploy to staging | `git push` → Actions (`STAGING_SSH_USER` = **`cursor-user`**) | Uncommitted Novamira hotfix without push to `main` (next CI overwrites) |
+| Emergency hotfix | Novamira `edit-file` *or* `scp` as **`cursor-user`**, then commit | SCP as `master_*`; leaving plugin dir mode **744** |
+| Cache purge | Cloudways MCP `app_purge_cache` (app `6528457`) | — |
+| HTTP checks (Windows) | `curl.exe -s -m 30 https://…` | Bare `curl` in PowerShell |
+| Cloudways API / credentials | `user-cloudways` MCP tools (credentials in MCP env) | `Get-Content ~/.cursor/mcp.json` in shell when MCP already covers the task |
+| Plugin asset 403 | `chmod 755` on plugin root (CI does this post-deploy) | Assuming Cloudflare WAF — origin Apache denied traverse on **744** dir |
+
+**Agents:** Prefer MCP over shell for staging verification. Credentials live in project `.cursor/mcp.json` (Novamira) and global `~/.cursor/mcp.json` (`user-cloudways`) — MCP loads them without shell parsing.
+
 ### Staging WP-CLI (Cloudways)
 
 **SSH (recommended):** WP-CLI is available in the application SSH shell — no PHP changes needed.
@@ -67,8 +99,8 @@ Preferred: **SSH key** deploy (see `scripts/setup-github-secrets.ps1`).
 
 | Secret | Purpose |
 |--------|---------|
-| `STAGING_SSH_HOST` | Staging server host |
-| `STAGING_SSH_USER` | Application SSH user |
+| `STAGING_SSH_HOST` | Staging server host (`45.76.227.59`) |
+| `STAGING_SSH_USER` | Application SSH login — **`cursor-user`** (not `tyaxssmjcp`) |
 | `STAGING_SSH_KEY` | Private deploy key (preferred) |
 | `STAGING_SSH_PASSWORD` | Fallback only — rotate if exposed |
 

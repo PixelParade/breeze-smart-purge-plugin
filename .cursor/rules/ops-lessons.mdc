@@ -16,6 +16,27 @@ alwaysApply: true
 
 Read-only checks on `breeze-smart-purge.pixelparade.dev` (WP-CLI, Novamira, Cloudways cache purge, browser snapshot) are auto-allowed — see `docs/ACCESS.md`. Never echo passwords or API keys in output.
 
+## What works / what doesn't (staging Jul 2026)
+
+**Works**
+
+- Novamira MCP — `read-file`, `edit-file`, `run-wp-cli` on staging (project `.cursor/mcp.json` only).
+- Cloudways MCP — `app_purge_cache`, `app_list`, `app_get`, `app_credentials` (usernames only in output).
+- SSH / WP-CLI as **`cursor-user`** (`STAGING_SSH_USER`); plugin path under `tyaxssmjcp` folder.
+- GitHub Actions deploy → `chmod 755` on plugin dir (fixes asset 403).
+- Manual Cloudways dashboard SSO for wp-admin browser checks.
+- `curl.exe -s -m 30` on Windows.
+
+**Blocked or unreliable**
+
+- Shell `Get-Content` / `ConvertFrom-Json` on `~/.cursor/mcp.json` — Auto-review *run cfg converter*; use MCP instead.
+- Cloudways WP Manager SSO via REST/API — OAuth works; automated SSO URL still wrong; no MCP `wp_manager` toolset.
+- Agent Chrome / DevTools — separate session; not logged in as you.
+- PowerShell `curl` alias — hangs without timeout.
+- Plugin assets **403** — plugin dir **744**, not Cloudflare WAF; fix permissions.
+
+**SSH naming:** login = **`cursor-user`**; disk folder = **`tyaxssmjcp`**; server master = **`master_jkzyxsmfqk`** (avoid for app deploy).
+
 ## After every deploy or significant PHP change
 
 1. `cd public_html && wp plugin list | grep smart-purge`

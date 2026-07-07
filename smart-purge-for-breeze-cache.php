@@ -2,7 +2,7 @@
 /**
  * Plugin Name: PixelParade Smart Purge for Breeze Cache
  * Description: Intelligently purges CPT archives, taxonomies, and page-builder hub pages when content changes in Breeze Cache.
- * Version: 1.1.15
+ * Version: 1.1.16
  * Author: PixelParade LLC
  * Author URI: https://pixelparade.co
  * License: GPL v2 or later
@@ -673,6 +673,31 @@ function bsp_get_utility_post_types() {
     return $utility_types;
 }
 
+/**
+ * Resolve which utility post type slugs should be hidden from the UI and scans.
+ *
+ * @param array|null $settings Optional bsp_settings array.
+ * @return string[]
+ */
+function bsp_get_hidden_utility_types( $settings = null ) {
+    $utility_slugs = array_keys( bsp_get_utility_post_types() );
+
+    if ( null === $settings ) {
+        $settings = wp_parse_args( get_option( 'bsp_settings', [] ), [ 'hide_utility' => 'yes', 'force_sync' => 'yes' ] );
+    }
+
+    if ( isset( $settings['hidden_utility_types'] ) && is_array( $settings['hidden_utility_types'] ) ) {
+        return array_values( array_intersect( $settings['hidden_utility_types'], $utility_slugs ) );
+    }
+
+    // Legacy all-or-nothing toggle.
+    if ( isset( $settings['hide_utility'] ) && 'no' === $settings['hide_utility'] ) {
+        return [];
+    }
+
+    return $utility_slugs;
+}
+
 // ====================================================================
 // 3. ADMIN SETTINGS PAGE & UI
 // ====================================================================
@@ -717,7 +742,7 @@ function bsp_render_settings_page() {
     
     $public_post_types = get_post_types(['public' => true], 'objects');
     $utility_types = bsp_get_utility_post_types();
-    $hidden_type_slugs = array_keys($utility_types);
+    $hidden_utility_types = bsp_get_hidden_utility_types( $settings );
 
     ?>
 
@@ -761,11 +786,30 @@ function bsp_render_settings_page() {
                     </label>
                     <p class="description" style="margin: 0 0 15px 24px;">Bypasses the default WP-Cron delay so cache purges happen instantly on "Update".</p>
 
-                    <label>
-                        <input type="checkbox" name="setting_hide_utility" <?php checked($settings['hide_utility'], 'yes'); ?>>
-                        <strong>Hide Utility Post Types from UI</strong>
-                    </label>
-                    <p class="description" style="margin: 0 0 20px 24px;">Hides background CPTs. <br><em>Auto-Detected: <code><?php echo esc_html(implode(', ', $hidden_type_slugs)); ?></code></em></p>
+                    <details class="bsp-utility-details">
+                        <summary>
+                            <span class="bsp-utility-summary-title"><?php esc_html_e( 'Hide Utility Post Types', 'smart-purge-for-breeze-cache' ); ?></span>
+                            <span class="bsp-utility-summary-hint"><?php esc_html_e( 'Choose which background CPTs to hide from the table below and skip during scans.', 'smart-purge-for-breeze-cache' ); ?></span>
+                        </summary>
+                        <div class="bsp-utility-body">
+                            <?php if ( empty( $utility_types ) ) : ?>
+                                <p class="description"><?php esc_html_e( 'No utility post types detected on this site.', 'smart-purge-for-breeze-cache' ); ?></p>
+                            <?php else : ?>
+                                <p class="description"><?php esc_html_e( 'Checked types are hidden from the settings table and excluded from auto-scan.', 'smart-purge-for-breeze-cache' ); ?></p>
+                                <ul class="bsp-utility-type-list">
+                                    <?php foreach ( $utility_types as $slug => $label ) : ?>
+                                        <li>
+                                            <label>
+                                                <input type="checkbox" name="bsp_hidden_utility[]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( in_array( $slug, $hidden_utility_types, true ) ); ?>>
+                                                <?php echo esc_html( $label ); ?>
+                                                <code><?php echo esc_html( $slug ); ?></code>
+                                            </label>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    </details>
                     
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
                         <button type="button" id="bsp-btn-scan" class="button button-secondary">Run Smart Scan</button>
@@ -784,7 +828,9 @@ function bsp_render_settings_page() {
             <table class="form-table">
                 <?php foreach ($public_post_types as $slug => $pt): ?>
                     <?php 
-                        if ($settings['hide_utility'] === 'yes' && in_array($slug, $hidden_type_slugs)) continue; 
+                        if ( in_array( $slug, $hidden_utility_types, true ) ) {
+                            continue;
+                        } 
                         
                         $scanned_urls = (isset($scanned_map[$slug]) && !empty($scanned_map[$slug])) ? implode("\n", $scanned_map[$slug]) : '[No pages auto-detected]';
                         $manual_urls  = isset($manual_map[$slug]) ? implode("\n", $manual_map[$slug]) : '';
@@ -900,9 +946,8 @@ function bsp_execute_auto_scanner( $settings, $progress_callback = null ) {
     $scanned_map = [];
     $public_post_types = get_post_types(['public' => true], 'names');
     
-    $utility_types = bsp_get_utility_post_types();
-    $hidden_type_slugs = array_keys($utility_types);
-    
+    $hidden_utility_types = bsp_get_hidden_utility_types( $settings );
+
     $pages = get_posts([
         'post_type' => 'page',
         'post_status' => 'publish',
@@ -938,7 +983,9 @@ function bsp_execute_auto_scanner( $settings, $progress_callback = null ) {
         $bricks_data    = $bricks_data_1 . ' ' . $bricks_data_2;
 
         foreach ($public_post_types as $pt) {
-            if ($settings['hide_utility'] === 'yes' && in_array($pt, $hidden_type_slugs)) continue;
+            if ( in_array( $pt, $hidden_utility_types, true ) ) {
+                continue;
+            }
 
             $found_builders = bsp_detect_post_type_hub_builders(
                 array(
@@ -1080,11 +1127,22 @@ function bsp_ajax_save_handler() {
     update_option('bsp_disable_tax_map', $disable_tax);
 
     // Save Global Settings
+    $utility_slugs = array_keys( bsp_get_utility_post_types() );
+    $hidden_utility = [];
+    if ( isset( $_POST['bsp_hidden_utility'] ) && is_array( $_POST['bsp_hidden_utility'] ) ) {
+        $hidden_utility = array_values(
+            array_intersect(
+                array_map( 'sanitize_text_field', wp_unslash( $_POST['bsp_hidden_utility'] ) ),
+                $utility_slugs
+            )
+        );
+    }
+
     $settings = [
-        'hide_utility' => isset($_POST['setting_hide_utility']) ? 'yes' : 'no',
-        'force_sync'   => isset($_POST['setting_force_sync']) ? 'yes' : 'no'
+        'force_sync'           => isset( $_POST['setting_force_sync'] ) ? 'yes' : 'no',
+        'hidden_utility_types' => $hidden_utility,
     ];
-    update_option('bsp_settings', $settings);
+    update_option( 'bsp_settings', $settings );
 
     wp_send_json_success();
 }
