@@ -32,6 +32,7 @@ Emergency hotfix: SCP to `public_html/wp-content/plugins/smart-purge-for-breeze-
 
 ## Staging deploy
 
+- On Windows PowerShell, `curl` is `Invoke-WebRequest` (no timeout) — use `curl.exe -s -m 30` for HTTP fetches or agents hang on slow endpoints.
 - Application SSH user cannot write `/tmp`; SCP directly to plugin path.
 - Cloudways master keys may not match application user keys; Actions may use password or deploy key per `docs/ACCESS.md`.
 - Pull script: `scripts/pull-from-staging.ps1` (pscp, then plink fallback).
@@ -89,4 +90,4 @@ Full checklist: `docs/MAINWP_ROLLOUT.md` § Fleet rollout safety.
 
 ## When to update this file
 
-After deploy incidents, auth changes, or architecture updates — one bullet here; mirror paths in `docs/ACCESS.md` if needed.
+After deploy incidents or auth changes — one bullet here. Cloudways MCP/API detail: `wpcp-debug/docs/CLOUDWAYS-MCP.md`. Paths: `docs/ACCESS.md`.

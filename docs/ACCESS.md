@@ -16,20 +16,21 @@ Use **SSH** for filesystem deploys and **WordPress REST / remote tools** for in-
 
 Hostname must be `breeze-smart-purge.pixelparade.dev` before any staging operation. See `.cursor/rules/novamira-mcp-safety.mdc`.
 
-## Cloudways MCP (staging infrastructure)
+## Cloudways MCP (staging)
 
-**Config:** global `~/.cursor/mcp.json` — server `user-cloudways`. Rule: `.cursor/rules/cloudways-mcp.mdc`.
+**Canonical reference:** `C:\Users\kevin\Projects\wpcp-debug\docs\CLOUDWAYS-MCP.md`  
+**Rule:** `.cursor/rules/cloudways-mcp.mdc`  
+**Config:** global `~/.cursor/mcp.json` — `user-cloudways` (email + API key headers; never commit)
 
-| Good for | Examples |
-|----------|----------|
-| Cache after deploy/test | `app_purge_cache` |
-| php.ini (`disable_functions`, memory) | `server_settings_get` / `server_settings_update` |
-| Per-app PHP-FPM pool | `app_fpm_settings_get` / `app_fpm_settings_update` (extended `apps` toolset) |
-| SSH creds, service restarts | `app_credentials`, `service_restart` |
+**Staging:** server `1305358`, app `6528457` (`breeze-smart-purge.pixelparade.dev`).
 
-Before claiming a Cloudways capability is missing, run `list_available_toolsets` → `get_toolset_tools` → `execute_tool`. API v2 FPM docs: [Get FPM Settings](https://developers.cloudways.com/docs#tag/App-Management/operation/Get%20FPM%20Settings).
+| Task | Where documented |
+|------|------------------|
+| Cache purge, php.ini, FPM, discovery | `CLOUDWAYS-MCP.md` |
+| WP Manager SSO / browser admin | Below + `cloudways-mcp.mdc` |
+| SSH WP-CLI vs Novamira `proc_open` | SSH / SFTP section below |
 
-**php.ini vs PHP-FPM:** `disable_functions` (for Novamira `run-wp-cli`) is server php.ini — not PHP-FPM pool config. Prefer SSH WP-CLI; see below.
+**php.ini vs PHP-FPM:** `disable_functions` for Novamira is php.ini — prefer SSH WP-CLI on production clients.
 
 ## SSH / SFTP
 
@@ -101,6 +102,19 @@ Template: [wp-config-github-updates.example.php](wp-config-github-updates.exampl
 - Application passwords, SSH passwords, and PATs belong in **gitignored** local files or GitHub Actions secrets only.
 - Rotate any credential that may have been shared outside the team password manager.
 - Do not duplicate staging MCP config into a global IDE config with production credentials.
+
+## Browser admin verification (staging)
+
+WP-CLI and Novamira can exercise AJAX handlers without a browser session. For **click-through** (toasts, enqueued `bsp-settings` assets), you need wp-admin logged in.
+
+| Method | Status (Jul 2026) |
+|--------|-------------------|
+| WP-CLI / Novamira | Works — scan/save AJAX simulated successfully on staging v1.1.14 |
+| Cloudways MCP SSO tool | Not exposed — no `wp_manager` toolset in live MCP |
+| Cloudways API v2 SSO REST | Documented in [WP Manager User SSO Login](https://developers.cloudways.com/docs#tag/WP-Manager/operation/WP%20Manager%20User%20SSO%20Login); automated agents have not yet resolved the correct path/body (OAuth succeeds; SSO returns *incorrect URL*) |
+| **Dashboard SSO (fastest manual)** | Cloudways → app **6528457** → **Access Details** / WP Manager → **Get SSO login URL** for `kevin@pixelparade.co` → open link → **Settings → Smart Purge** |
+
+Settings page: `wp-admin/options-general.php?page=smart-purge-for-breeze-cache`
 
 ## Verify deploys
 
