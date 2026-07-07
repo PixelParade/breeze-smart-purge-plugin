@@ -29,11 +29,12 @@ jobs:
             "$REMOTE"
           sshpass -e scp -o StrictHostKeyChecking=no -r \
             includes \
+            assets \
             "$REMOTE"
 
       - name: Deploy summary
         run: |
           echo "Deployed branch ${{ github.ref_name }} commit ${{ github.sha }} to staging (agency build)."
           echo "Plugin path: ${{ env.STAGING_REMOTE_PLUGIN_PATH }}/"
-          echo "Includes: github-updater.php + includes/agency/ (same tree as agency release zip)."
+          echo "Includes: github-updater.php, includes/agency/, assets/ (icons + admin CSS/JS)."
           echo "Staging tracks main on push. Tag v* for versioned MainWP / GitHub Release rollouts."
