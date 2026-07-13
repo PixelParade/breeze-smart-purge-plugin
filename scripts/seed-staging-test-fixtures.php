@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 	exit("Run via WP-CLI: wp eval-file scripts/seed-staging-test-fixtures.php\n");
 }
 
-if (!function_exists('bsp_execute_auto_scanner')) {
+if (!function_exists('ppspb_execute_auto_scanner')) {
 	exit("Smart Purge for Breeze Cache must be active.\n");
 }
 
@@ -27,7 +27,7 @@ if (!function_exists('bsp_execute_auto_scanner')) {
  * @param string $post_type Post type.
  * @return WP_Post|null
  */
-function bsp_seed_get_post_by_slug($slug, $post_type = 'page') {
+function ppspb_seed_get_post_by_slug($slug, $post_type = 'page') {
 	$posts = get_posts(
 		array(
 			'post_type'      => $post_type,
@@ -44,8 +44,8 @@ function bsp_seed_get_post_by_slug($slug, $post_type = 'page') {
  * @param array  $args wp_insert_post args.
  * @return int Post ID.
  */
-function bsp_seed_upsert_page($slug, array $args) {
-	$existing = bsp_seed_get_post_by_slug($slug, 'page');
+function ppspb_seed_upsert_page($slug, array $args) {
+	$existing = ppspb_seed_get_post_by_slug($slug, 'page');
 	$defaults = array(
 		'post_type'   => 'page',
 		'post_status' => 'publish',
@@ -72,8 +72,8 @@ function bsp_seed_upsert_page($slug, array $args) {
 /**
  * Register a public CPT used only for plugin QA (idempotent).
  */
-function bsp_seed_register_test_cpt() {
-	$slug = 'bsp_test_project';
+function ppspb_seed_register_test_cpt() {
+	$slug = 'ppspb_test_project';
 
 	if (post_type_exists($slug)) {
 		return $slug;
@@ -88,7 +88,7 @@ function bsp_seed_register_test_cpt() {
 			),
 			'public'       => true,
 			'has_archive'  => true,
-			'rewrite'      => array('slug' => 'bsp-test-projects'),
+			'rewrite'      => array('slug' => 'ppspb-test-projects'),
 			'show_in_rest' => true,
 			'supports'     => array('title', 'editor', 'thumbnail'),
 		)
@@ -98,11 +98,11 @@ function bsp_seed_register_test_cpt() {
 	return $slug;
 }
 
-function bsp_seed_create_sample_posts($cpt, $count = 3) {
+function ppspb_seed_create_sample_posts($cpt, $count = 3) {
 	$ids = array();
 	for ($i = 1; $i <= $count; $i++) {
-		$slug     = 'bsp-test-project-' . $i;
-		$existing = bsp_seed_get_post_by_slug($slug, $cpt);
+		$slug     = 'ppspb-test-project-' . $i;
+		$existing = ppspb_seed_get_post_by_slug($slug, $cpt);
 		if ($existing) {
 			$ids[] = (int) $existing->ID;
 			continue;
@@ -126,8 +126,8 @@ function bsp_seed_create_sample_posts($cpt, $count = 3) {
 	return $ids;
 }
 
-$cpt = bsp_seed_register_test_cpt();
-bsp_seed_create_sample_posts($cpt);
+$cpt = ppspb_seed_register_test_cpt();
+ppspb_seed_create_sample_posts($cpt);
 
 // Gutenberg hub — Query Loop block referencing the test CPT.
 $gutenberg_content = '<!-- wp:heading --><h2>BSP Gutenberg Hub</h2><!-- /wp:heading -->'
@@ -136,8 +136,8 @@ $gutenberg_content = '<!-- wp:heading --><h2>BSP Gutenberg Hub</h2><!-- /wp:head
 	. '<!-- wp:post-title {"isLink":true} /--><!-- wp:post-excerpt /-->'
 	. '<!-- /wp:post-template --></div><!-- /wp:query -->';
 
-$gutenberg_id = bsp_seed_upsert_page(
-	'bsp-test-gutenberg-hub',
+$gutenberg_id = ppspb_seed_upsert_page(
+	'ppspb-test-gutenberg-hub',
 	array(
 		'post_title'   => 'BSP Test — Gutenberg Hub',
 		'post_content' => $gutenberg_content,
@@ -145,8 +145,8 @@ $gutenberg_id = bsp_seed_upsert_page(
 );
 
 // Simulated Beaver Builder hub (meta only — no BB plugin required for scanner).
-$beaver_id = bsp_seed_upsert_page(
-	'bsp-test-beaver-hub',
+$beaver_id = ppspb_seed_upsert_page(
+	'ppspb-test-beaver-hub',
 	array(
 		'post_title'   => 'BSP Test — Beaver Builder Hub (simulated)',
 		'post_content' => '<p>Scanner fixture: Beaver Builder post grid meta only.</p>',
@@ -170,8 +170,8 @@ update_post_meta(
 update_post_meta($beaver_id, '_fl_builder_enabled', '1');
 
 // Simulated Elementor hub.
-$elementor_id = bsp_seed_upsert_page(
-	'bsp-test-elementor-hub',
+$elementor_id = ppspb_seed_upsert_page(
+	'ppspb-test-elementor-hub',
 	array(
 		'post_title'   => 'BSP Test — Elementor Hub (simulated)',
 		'post_content' => '',
@@ -191,8 +191,8 @@ update_post_meta(
 );
 
 // Simulated Oxygen hub (ct_builder_json meta).
-$oxygen_id = bsp_seed_upsert_page(
-	'bsp-test-oxygen-hub',
+$oxygen_id = ppspb_seed_upsert_page(
+	'ppspb-test-oxygen-hub',
 	array(
 		'post_title'   => 'BSP Test — Oxygen Hub (simulated)',
 		'post_content' => '<p>Scanner fixture: Oxygen JSON meta.</p>',
@@ -211,8 +211,8 @@ update_post_meta(
 );
 
 // WPBakery shortcode hub (plugin not required — post_content shortcode pattern).
-$wpbakery_id = bsp_seed_upsert_page(
-	'bsp-test-wpbakery-hub',
+$wpbakery_id = ppspb_seed_upsert_page(
+	'ppspb-test-wpbakery-hub',
 	array(
 		'post_title'   => 'BSP Test — WPBakery Hub (shortcode fixture)',
 		'post_content' => '[vc_basic_grid post_type="' . $cpt . '" max_items="6" item="basicGrid_Item"]',
@@ -220,8 +220,8 @@ $wpbakery_id = bsp_seed_upsert_page(
 );
 
 // Divi shortcode hub (plugin not required — post_content shortcode pattern).
-$divi_id = bsp_seed_upsert_page(
-	'bsp-test-divi-hub',
+$divi_id = ppspb_seed_upsert_page(
+	'ppspb-test-divi-hub',
 	array(
 		'post_title'   => 'BSP Test — Divi Hub (shortcode fixture)',
 		'post_content' => '[et_pb_blog post_type="' . $cpt . '" posts_number="6" show_thumbnail="on"]',
@@ -231,8 +231,8 @@ $divi_id = bsp_seed_upsert_page(
 // Blog posts index helper (standard post type hub).
 $blog_id = (int) get_option('page_for_posts');
 if (!$blog_id) {
-	$blog_id = bsp_seed_upsert_page(
-		'bsp-test-blog',
+	$blog_id = ppspb_seed_upsert_page(
+		'ppspb-test-blog',
 		array(
 			'post_title'   => 'BSP Test Blog',
 			'post_content' => '<p>Posts index for purge tests.</p>',
@@ -242,9 +242,9 @@ if (!$blog_id) {
 }
 
 // Run scanner and report.
-$settings = wp_parse_args(get_option('bsp_settings', array()), array('hide_utility' => 'yes', 'force_sync' => 'yes'));
-$log      = bsp_execute_auto_scanner($settings);
-$map      = get_option('bsp_scanned_map', array());
+$settings = wp_parse_args(get_option('ppspb_settings', array()), array('hide_utility' => 'yes', 'force_sync' => 'yes'));
+$log      = ppspb_execute_auto_scanner($settings);
+$map      = get_option('ppspb_scanned_map', array());
 
 $summary = array(
 	'cpt'              => $cpt,

@@ -9,8 +9,8 @@
  */
 
 $cpt_paths = array(
-	__DIR__ . '/bsp-staging-test-cpt/bsp-test-cpt.php',
-	WP_CONTENT_DIR . '/novamira-sandbox/bsp-test-cpt.php',
+	__DIR__ . '/ppspb-staging-test-cpt/ppspb-test-cpt.php',
+	WP_CONTENT_DIR . '/novamira-sandbox/ppspb-test-cpt.php',
 );
 
 foreach ($cpt_paths as $cpt_file) {

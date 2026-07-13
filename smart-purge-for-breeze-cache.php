@@ -2,7 +2,7 @@
 /**
  * Plugin Name: PixelParade Smart Purge for Breeze Cache
  * Description: Intelligently purges CPT archives, taxonomies, and page-builder hub pages when content changes in Breeze Cache.
- * Version: 1.1.16
+ * Version: 1.1.17
  * Author: PixelParade LLC
  * Author URI: https://pixelparade.co
  * License: GPL v2 or later
@@ -14,23 +14,62 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (!defined('BSP_PLUGIN_FILE')) {
-    define('BSP_PLUGIN_FILE', __FILE__);
+if (!defined('PPSPB_PLUGIN_FILE')) {
+    define('PPSPB_PLUGIN_FILE', __FILE__);
 }
-if (!defined('BSP_PLUGIN_SLUG')) {
-    define('BSP_PLUGIN_SLUG', 'smart-purge-for-breeze-cache');
+if (!defined('PPSPB_PLUGIN_SLUG')) {
+    define('PPSPB_PLUGIN_SLUG', 'smart-purge-for-breeze-cache');
 }
-if (!defined('BSP_PLUGIN_DISPLAY_NAME')) {
-    define('BSP_PLUGIN_DISPLAY_NAME', 'PixelParade Smart Purge for Breeze Cache');
+if (!defined('PPSPB_PLUGIN_DISPLAY_NAME')) {
+    define('PPSPB_PLUGIN_DISPLAY_NAME', 'PixelParade Smart Purge for Breeze Cache');
 }
-if (!defined('BSP_VERSION')) {
-    define('BSP_VERSION', '1.1.14');
+if (!defined('PPSPB_VERSION')) {
+    define('PPSPB_VERSION', '1.1.17');
 }
 
-// Agency bootstrap first — may define BSP_GITHUB_TOKEN from env or encrypted option.
-$bsp_agency_bootstrap = __DIR__ . '/includes/agency/bootstrap.php';
-if (file_exists($bsp_agency_bootstrap)) {
-    require_once $bsp_agency_bootstrap;
+/**
+ * Copy legacy bsp_* options / transients to ppspb_* once (MainWP clients upgrading from &lt; 1.1.17).
+ */
+function ppspb_maybe_migrate_legacy_options() {
+	if ( get_option( 'ppspb_options_migrated', false ) ) {
+		return;
+	}
+
+	$option_map = array(
+		'bsp_settings'             => 'ppspb_settings',
+		'bsp_scanned_map'          => 'ppspb_scanned_map',
+		'bsp_manual_map'           => 'ppspb_manual_map',
+		'bsp_ignored_map'          => 'ppspb_ignored_map',
+		'bsp_disable_archive_map'  => 'ppspb_disable_archive_map',
+		'bsp_disable_tax_map'      => 'ppspb_disable_tax_map',
+		'bsp_scan_log'             => 'ppspb_scan_log',
+		'bsp_needs_initial_scan'   => 'ppspb_needs_initial_scan',
+		'bsp_agency_github_token'  => 'ppspb_agency_github_token',
+	);
+
+	foreach ( $option_map as $old => $new ) {
+		if ( false === get_option( $new, false ) ) {
+			$legacy = get_option( $old, false );
+			if ( false !== $legacy ) {
+				update_option( $new, $legacy, false );
+			}
+		}
+		delete_option( $old );
+	}
+
+	delete_transient( 'bsp_scan_progress' );
+	delete_transient( 'bsp_scan_summary_notice' );
+	delete_transient( 'bsp_github_release' );
+
+	update_option( 'ppspb_options_migrated', 1, false );
+}
+
+ppspb_maybe_migrate_legacy_options();
+
+// Agency bootstrap first — may define PPSPB_GITHUB_TOKEN from env or encrypted option.
+$ppspb_agency_bootstrap = __DIR__ . '/includes/agency/bootstrap.php';
+if (file_exists($ppspb_agency_bootstrap)) {
+    require_once $ppspb_agency_bootstrap;
 }
 
 // GitHub Releases updater — agency / MainWP lane only (file omitted from wordpress.org builds).
@@ -38,20 +77,20 @@ if (file_exists(__DIR__ . '/includes/github-updater.php')) {
     require_once __DIR__ . '/includes/github-updater.php';
 }
 
-$bsp_scanner_detection = __DIR__ . '/includes/scanner-detection.php';
-if (file_exists($bsp_scanner_detection)) {
-    require_once $bsp_scanner_detection;
+$ppspb_scanner_detection = __DIR__ . '/includes/scanner-detection.php';
+if (file_exists($ppspb_scanner_detection)) {
+    require_once $ppspb_scanner_detection;
 }
 
-add_action('admin_enqueue_scripts', 'bsp_enqueue_admin_plugin_asset_styles');
-add_action('admin_enqueue_scripts', 'bsp_enqueue_settings_assets');
+add_action('admin_enqueue_scripts', 'ppspb_enqueue_admin_plugin_asset_styles');
+add_action('admin_enqueue_scripts', 'ppspb_enqueue_settings_assets');
 
 /**
  * object-fit: cover for plugin icon/banner on Updates, Plugins, and View details screens.
  *
  * @param string $hook_suffix Current admin screen hook.
  */
-function bsp_enqueue_admin_plugin_asset_styles($hook_suffix) {
+function ppspb_enqueue_admin_plugin_asset_styles($hook_suffix) {
 	$screens = array('update-core.php', 'plugins.php', 'plugin-install.php');
 	if (!in_array($hook_suffix, $screens, true)) {
 		return;
@@ -63,7 +102,7 @@ function bsp_enqueue_admin_plugin_asset_styles($hook_suffix) {
 	}
 
 	wp_enqueue_style(
-		'bsp-plugin-assets',
+		'ppspb-plugin-assets',
 		plugins_url('assets/admin/plugin-assets.css', __FILE__),
 		array(),
 		(string) filemtime($css_path)
@@ -75,8 +114,8 @@ function bsp_enqueue_admin_plugin_asset_styles($hook_suffix) {
  *
  * @param string $hook_suffix Current admin screen hook.
  */
-function bsp_enqueue_settings_assets($hook_suffix) {
-	if ('settings_page_' . BSP_PLUGIN_SLUG !== $hook_suffix) {
+function ppspb_enqueue_settings_assets($hook_suffix) {
+	if ('settings_page_' . PPSPB_PLUGIN_SLUG !== $hook_suffix) {
 		return;
 	}
 
@@ -85,8 +124,8 @@ function bsp_enqueue_settings_assets($hook_suffix) {
 
 	if (file_exists($css_path)) {
 		wp_enqueue_style(
-			'bsp-settings',
-			plugins_url('assets/admin/settings.css', BSP_PLUGIN_FILE),
+			'ppspb-settings',
+			plugins_url('assets/admin/settings.css', PPSPB_PLUGIN_FILE),
 			array(),
 			(string) filemtime($css_path)
 		);
@@ -97,22 +136,22 @@ function bsp_enqueue_settings_assets($hook_suffix) {
 	}
 
 	wp_enqueue_script(
-		'bsp-settings',
-		plugins_url('assets/admin/settings.js', BSP_PLUGIN_FILE),
+		'ppspb-settings',
+		plugins_url('assets/admin/settings.js', PPSPB_PLUGIN_FILE),
 		array(),
 		(string) filemtime($js_path),
 		true
 	);
 
 	wp_localize_script(
-		'bsp-settings',
-		'bspSettings',
+		'ppspb-settings',
+		'ppspbSettings',
 		array(
 			'ajaxUrl'    => admin_url('admin-ajax.php'),
-			'nonce'      => wp_create_nonce('bsp_save_action'),
-			'scanAction'   => 'bsp_run_ajax_scan',
-			'statusAction' => 'bsp_ajax_scan_status',
-			'saveAction'   => 'bsp_run_ajax_save',
+			'nonce'      => wp_create_nonce('ppspb_save_action'),
+			'scanAction'   => 'ppspb_run_ajax_scan',
+			'statusAction' => 'ppspb_ajax_scan_status',
+			'saveAction'   => 'ppspb_run_ajax_save',
 			'i18n'         => array(
 				'scanning'         => __('Scanning...', 'smart-purge-for-breeze-cache'),
 				'scanStarting'     => __('Starting scan...', 'smart-purge-for-breeze-cache'),
@@ -135,10 +174,10 @@ function bsp_enqueue_settings_assets($hook_suffix) {
 // ====================================================================
 
 // Check if Breeze is active before running any logic
-function bsp_check_dependencies() {
+function ppspb_check_dependencies() {
     if (!defined('BREEZE_VERSION')) {
         add_action('admin_notices', function() {
-            echo '<div class="notice notice-error"><p><strong>' . esc_html(BSP_PLUGIN_DISPLAY_NAME) . '</strong> ' . esc_html__('requires the', 'smart-purge-for-breeze-cache') . ' <a href="https://wordpress.org/plugins/breeze/" target="_blank">Breeze Cache</a> ' . esc_html__('plugin to be active. Please activate it to enable smart purging.', 'smart-purge-for-breeze-cache') . '</p></div>';
+            echo '<div class="notice notice-error"><p><strong>' . esc_html(PPSPB_PLUGIN_DISPLAY_NAME) . '</strong> ' . esc_html__('requires the', 'smart-purge-for-breeze-cache') . ' <a href="https://wordpress.org/plugins/breeze/" target="_blank">Breeze Cache</a> ' . esc_html__('plugin to be active. Please activate it to enable smart purging.', 'smart-purge-for-breeze-cache') . '</p></div>';
         });
         return false;
     }
@@ -146,9 +185,9 @@ function bsp_check_dependencies() {
 }
 
 // Add link to the Plugins page
-add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'bsp_add_settings_link');
-function bsp_add_settings_link($links) {
-    $settings_link = '<a href="' . esc_url(admin_url('options-general.php?page=' . BSP_PLUGIN_SLUG)) . '">' . esc_html__('Settings', 'smart-purge-for-breeze-cache') . '</a>';
+add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'ppspb_add_settings_link');
+function ppspb_add_settings_link($links) {
+    $settings_link = '<a href="' . esc_url(admin_url('options-general.php?page=' . PPSPB_PLUGIN_SLUG)) . '">' . esc_html__('Settings', 'smart-purge-for-breeze-cache') . '</a>';
     array_unshift($links, $settings_link);
     return $links;
 }
@@ -157,12 +196,12 @@ function bsp_add_settings_link($links) {
 // ADMIN BAR — Breeze dropdown on frontend + per-page clear cache
 // ====================================================================
 
-add_action('admin_bar_menu', 'bsp_register_breeze_frontend_admin_bar', 999);
-add_action('admin_bar_menu', 'bsp_register_breeze_admin_bar_items', 1001);
-add_action('template_redirect', 'bsp_handle_frontend_breeze_purge_links');
-add_action('wp_enqueue_scripts', 'bsp_enqueue_frontend_breeze_toolbar_assets');
+add_action('admin_bar_menu', 'ppspb_register_breeze_frontend_admin_bar', 999);
+add_action('admin_bar_menu', 'ppspb_register_breeze_admin_bar_items', 1001);
+add_action('template_redirect', 'ppspb_handle_frontend_breeze_purge_links');
+add_action('wp_enqueue_scripts', 'ppspb_enqueue_frontend_breeze_toolbar_assets');
 
-function bsp_breeze_toolbar_enabled() {
+function ppspb_breeze_toolbar_enabled() {
     if (!defined('BREEZE_VERSION') || !class_exists('Breeze_Options_Reader')) {
         return false;
     }
@@ -170,7 +209,7 @@ function bsp_breeze_toolbar_enabled() {
     return !empty($display);
 }
 
-function bsp_user_can_use_breeze_toolbar() {
+function ppspb_user_can_use_breeze_toolbar() {
     if (current_user_can('manage_options') || current_user_can('editor')) {
         return true;
     }
@@ -179,7 +218,7 @@ function bsp_user_can_use_breeze_toolbar() {
         && current_user_can('manage_woocommerce');
 }
 
-function bsp_get_current_request_url() {
+function ppspb_get_current_request_url() {
     $path = '/';
     if (isset($_SERVER['REQUEST_URI'])) {
         $path = sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI']));
@@ -187,15 +226,15 @@ function bsp_get_current_request_url() {
     return home_url($path);
 }
 
-function bsp_get_breeze_purge_url($query_arg, $nonce_action) {
+function ppspb_get_breeze_purge_url($query_arg, $nonce_action) {
     $url = remove_query_arg(
         ['breeze_purge', 'breeze_purge_cloudflare', 'breeze_purge_cache_cloudflare', '_wpnonce', 'breeze_post_cache'],
-        bsp_get_current_request_url()
+        ppspb_get_current_request_url()
     );
     return wp_nonce_url(add_query_arg($query_arg, 1, $url), $nonce_action);
 }
 
-function bsp_get_clear_post_cache_url($post) {
+function ppspb_get_clear_post_cache_url($post) {
     if (!$post instanceof WP_Post) {
         $post = get_post($post);
     }
@@ -212,7 +251,7 @@ function bsp_get_clear_post_cache_url($post) {
     );
 }
 
-function bsp_get_admin_bar_singular_post() {
+function ppspb_get_admin_bar_singular_post() {
     if (!is_singular()) {
         return null;
     }
@@ -220,8 +259,8 @@ function bsp_get_admin_bar_singular_post() {
     return ($post instanceof WP_Post) ? $post : null;
 }
 
-function bsp_get_admin_bar_context_post() {
-    $post = bsp_get_admin_bar_singular_post();
+function ppspb_get_admin_bar_context_post() {
+    $post = ppspb_get_admin_bar_singular_post();
     if ($post) {
         return $post;
     }
@@ -242,8 +281,8 @@ function bsp_get_admin_bar_context_post() {
  *
  * @param WP_Admin_Bar $wp_admin_bar Admin bar instance.
  */
-function bsp_register_breeze_frontend_admin_bar($wp_admin_bar) {
-    if (is_admin() || !bsp_breeze_toolbar_enabled() || !bsp_user_can_use_breeze_toolbar()) {
+function ppspb_register_breeze_frontend_admin_bar($wp_admin_bar) {
+    if (is_admin() || !ppspb_breeze_toolbar_enabled() || !ppspb_user_can_use_breeze_toolbar()) {
         return;
     }
     if ($wp_admin_bar->get_node('breeze-topbar')) {
@@ -270,7 +309,7 @@ function bsp_register_breeze_frontend_admin_bar($wp_admin_bar) {
                 ? esc_html__('Purge All Cache', 'breeze')
                 : esc_html__('Purge Site Cache', 'breeze'),
             'parent' => 'breeze-topbar',
-            'href'   => bsp_get_breeze_purge_url('breeze_purge', 'breeze_purge_cache'),
+            'href'   => ppspb_get_breeze_purge_url('breeze_purge', 'breeze_purge_cache'),
             'meta'   => array(
                 'class' => 'breeze-toolbar-group',
             ),
@@ -301,7 +340,7 @@ function bsp_register_breeze_frontend_admin_bar($wp_admin_bar) {
             'id'     => 'breeze-purge-cloudflare',
             'title'  => esc_html__('Purge Cloudflare Cache', 'breeze'),
             'parent' => 'breeze-purge-modules',
-            'href'   => bsp_get_breeze_purge_url('breeze_purge_cloudflare', 'breeze_purge_cache_cloudflare'),
+            'href'   => ppspb_get_breeze_purge_url('breeze_purge_cloudflare', 'breeze_purge_cache_cloudflare'),
             'meta'   => array(
                 'class' => 'breeze-toolbar-group',
             ),
@@ -309,18 +348,18 @@ function bsp_register_breeze_frontend_admin_bar($wp_admin_bar) {
     );
 }
 
-function bsp_register_breeze_admin_bar_items($wp_admin_bar) {
-    if (!bsp_breeze_toolbar_enabled() || !bsp_user_can_use_breeze_toolbar()) {
+function ppspb_register_breeze_admin_bar_items($wp_admin_bar) {
+    if (!ppspb_breeze_toolbar_enabled() || !ppspb_user_can_use_breeze_toolbar()) {
         return;
     }
     if (!$wp_admin_bar->get_node('breeze-topbar')) {
         return;
     }
 
-    $post = bsp_get_admin_bar_context_post();
+    $post = ppspb_get_admin_bar_context_post();
 
     if ($post) {
-        $clear_url = bsp_get_clear_post_cache_url($post);
+        $clear_url = ppspb_get_clear_post_cache_url($post);
         if ($clear_url) {
             $wp_admin_bar->add_node([
                 'id'     => 'breeze-clear-this-page',
@@ -337,23 +376,23 @@ function bsp_register_breeze_admin_bar_items($wp_admin_bar) {
             'id'     => 'breeze-smart-purge-link',
             'parent' => 'breeze-topbar',
             'title'  => __('Smart Purge Settings', 'smart-purge-for-breeze-cache'),
-            'href'   => admin_url('options-general.php?page=' . BSP_PLUGIN_SLUG),
+            'href'   => admin_url('options-general.php?page=' . PPSPB_PLUGIN_SLUG),
             'meta'   => ['class' => 'breeze-toolbar-group'],
         ]);
     }
 }
 
-function bsp_should_load_frontend_breeze_toolbar_assets() {
+function ppspb_should_load_frontend_breeze_toolbar_assets() {
     return !is_admin()
-        && bsp_breeze_toolbar_enabled()
-        && bsp_user_can_use_breeze_toolbar()
+        && ppspb_breeze_toolbar_enabled()
+        && ppspb_user_can_use_breeze_toolbar()
         && current_user_can('manage_options')
         && defined('BREEZE_VERSION')
         && defined('BREEZE_PLUGIN_DIR');
 }
 
-function bsp_enqueue_frontend_breeze_toolbar_assets() {
-    if (!bsp_should_load_frontend_breeze_toolbar_assets()) {
+function ppspb_enqueue_frontend_breeze_toolbar_assets() {
+    if (!ppspb_should_load_frontend_breeze_toolbar_assets()) {
         return;
     }
 
@@ -361,10 +400,10 @@ function bsp_enqueue_frontend_breeze_toolbar_assets() {
         wp_enqueue_script('jquery');
     }
 
-    wp_register_script('bsp-ajaxurl', false, array(), BSP_VERSION, true);
-    wp_enqueue_script('bsp-ajaxurl');
+    wp_register_script('ppspb-ajaxurl', false, array(), PPSPB_VERSION, true);
+    wp_enqueue_script('ppspb-ajaxurl');
     wp_add_inline_script(
-        'bsp-ajaxurl',
+        'ppspb-ajaxurl',
         'var ajaxurl=' . wp_json_encode(admin_url('admin-ajax.php')) . ';',
         'before'
     );
@@ -382,7 +421,7 @@ function bsp_enqueue_frontend_breeze_toolbar_assets() {
     wp_enqueue_script(
         'breeze-backend',
         plugins_url('assets/js/breeze-main' . $min . '.js', $breeze_admin_file),
-        array('jquery', 'bsp-ajaxurl'),
+        array('jquery', 'ppspb-ajaxurl'),
         BREEZE_VERSION,
         true
     );
@@ -414,14 +453,14 @@ function bsp_enqueue_frontend_breeze_toolbar_assets() {
     );
 }
 
-function bsp_handle_frontend_breeze_purge_links() {
-    if (is_admin() || !is_user_logged_in() || !bsp_user_can_use_breeze_toolbar()) {
+function ppspb_handle_frontend_breeze_purge_links() {
+    if (is_admin() || !is_user_logged_in() || !ppspb_user_can_use_breeze_toolbar()) {
         return;
     }
 
     $redirect = remove_query_arg(
         ['breeze_purge', 'breeze_purge_cloudflare', 'breeze_purge_cache_cloudflare', '_wpnonce'],
-        bsp_get_current_request_url()
+        ppspb_get_current_request_url()
     );
 
     if (isset($_GET['breeze_purge'])) {
@@ -441,13 +480,13 @@ function bsp_handle_frontend_breeze_purge_links() {
     }
 }
 
-add_action('wp_footer', 'bsp_frontend_cache_cleared_notice');
-function bsp_frontend_cache_cleared_notice() {
+add_action('wp_footer', 'ppspb_frontend_cache_cleared_notice');
+function ppspb_frontend_cache_cleared_notice() {
     // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only notice after Breeze purge redirect.
     if (is_admin() || !isset($_GET['breeze_post_cache']) || 'cleared' !== sanitize_text_field(wp_unslash($_GET['breeze_post_cache']))) {
         return;
     }
-    if (!bsp_user_can_use_breeze_toolbar()) {
+    if (!ppspb_user_can_use_breeze_toolbar()) {
         return;
     }
     echo '<div class="notice notice-success" style="position:fixed;bottom:20px;right:20px;z-index:99999;padding:12px 16px;background:#fff;border-left:4px solid #46b450;box-shadow:0 2px 8px rgba(0,0,0,.15);">'
@@ -464,7 +503,7 @@ function bsp_frontend_cache_cleared_notice() {
  *
  * @return string[] Basenames under wp-content/plugins/.
  */
-function bsp_get_conflicting_plugin_dirs() {
+function ppspb_get_conflicting_plugin_dirs() {
 	$conflicts = array();
 	$plugins   = wp_normalize_path(WP_PLUGIN_DIR);
 
@@ -485,13 +524,13 @@ function bsp_get_conflicting_plugin_dirs() {
 	return array_values(array_unique($conflicts));
 }
 
-add_action('admin_notices', 'bsp_admin_notice_conflicting_plugin_dirs');
-function bsp_admin_notice_conflicting_plugin_dirs() {
+add_action('admin_notices', 'ppspb_admin_notice_conflicting_plugin_dirs');
+function ppspb_admin_notice_conflicting_plugin_dirs() {
 	if (!current_user_can('activate_plugins')) {
 		return;
 	}
 
-	$conflicts = bsp_get_conflicting_plugin_dirs();
+	$conflicts = ppspb_get_conflicting_plugin_dirs();
 	if (empty($conflicts)) {
 		return;
 	}
@@ -517,38 +556,39 @@ function bsp_admin_notice_conflicting_plugin_dirs() {
 }
 
 // Set a flag to run the initial scan safely AFTER activation
-register_activation_hook(__FILE__, 'bsp_on_activation');
-function bsp_on_activation() {
-    update_option('bsp_needs_initial_scan', true);
+register_activation_hook(__FILE__, 'ppspb_on_activation');
+function ppspb_on_activation() {
+    ppspb_maybe_migrate_legacy_options();
+    update_option('ppspb_needs_initial_scan', true);
 }
 
 // Run the deferred scan to prevent server timeouts during plugin activation
-add_action('admin_init', 'bsp_run_deferred_scan');
-function bsp_run_deferred_scan() {
-    if (!bsp_check_dependencies()) return; // Abort if Breeze is missing
+add_action('admin_init', 'ppspb_run_deferred_scan');
+function ppspb_run_deferred_scan() {
+    if (!ppspb_check_dependencies()) return; // Abort if Breeze is missing
 
-    if (get_option('bsp_needs_initial_scan')) {
-        delete_option('bsp_needs_initial_scan');
-        $settings = wp_parse_args(get_option('bsp_settings', []), ['hide_utility' => 'yes', 'force_sync' => 'yes']);
-        $log = bsp_execute_auto_scanner($settings);
-        set_transient('bsp_scan_summary_notice', $log, 60); // Save log to display once
+    if (get_option('ppspb_needs_initial_scan')) {
+        delete_option('ppspb_needs_initial_scan');
+        $settings = wp_parse_args(get_option('ppspb_settings', []), ['hide_utility' => 'yes', 'force_sync' => 'yes']);
+        $log = ppspb_execute_auto_scanner($settings);
+        set_transient('ppspb_scan_summary_notice', $log, 60); // Save log to display once
     }
 }
 
 // Display the success notice after initial scan
-add_action('admin_notices', 'bsp_display_scan_notice');
-function bsp_display_scan_notice() {
-    if ($notice = get_transient('bsp_scan_summary_notice')) {
+add_action('admin_notices', 'ppspb_display_scan_notice');
+function ppspb_display_scan_notice() {
+    if ($notice = get_transient('ppspb_scan_summary_notice')) {
         ?>
         <div class="notice notice-success is-dismissible">
-            <p><strong><?php echo esc_html(sprintf(/* translators: %s: plugin display name */ __('%s activated!', 'smart-purge-for-breeze-cache'), BSP_PLUGIN_DISPLAY_NAME)); ?></strong> <?php esc_html_e('Initial auto-scan complete.', 'smart-purge-for-breeze-cache'); ?></p>
+            <p><strong><?php echo esc_html(sprintf(/* translators: %s: plugin display name */ __('%s activated!', 'smart-purge-for-breeze-cache'), PPSPB_PLUGIN_DISPLAY_NAME)); ?></strong> <?php esc_html_e('Initial auto-scan complete.', 'smart-purge-for-breeze-cache'); ?></p>
             <p>
-                <a href="<?php echo esc_url(admin_url('options-general.php?page=' . BSP_PLUGIN_SLUG)); ?>" class="button button-primary"><?php esc_html_e('Review settings', 'smart-purge-for-breeze-cache'); ?></a>
+                <a href="<?php echo esc_url(admin_url('options-general.php?page=' . PPSPB_PLUGIN_SLUG)); ?>" class="button button-primary"><?php esc_html_e('Review settings', 'smart-purge-for-breeze-cache'); ?></a>
             </p>
             <p style="font-family: monospace; font-size: 13px;"><?php echo nl2br(esc_html($notice)); ?></p>
         </div>
         <?php
-        delete_transient('bsp_scan_summary_notice');
+        delete_transient('ppspb_scan_summary_notice');
     }
 }
 
@@ -558,35 +598,35 @@ function bsp_display_scan_notice() {
 
 // Only run the core logic if Breeze is active
 if (defined('BREEZE_VERSION')) {
-    $bsp_global_settings = wp_parse_args(get_option('bsp_settings', []), ['hide_utility' => 'yes', 'force_sync' => 'yes']);
+    $ppspb_global_settings = wp_parse_args(get_option('ppspb_settings', []), ['hide_utility' => 'yes', 'force_sync' => 'yes']);
 
     // Toggleable Synchronous Purge
-    if ($bsp_global_settings['force_sync'] === 'yes') {
+    if ($ppspb_global_settings['force_sync'] === 'yes') {
         add_filter('breeze_cf_purge_type_on_post_update', function() {
             return 'synchronous';
         });
     }
 
-    add_action('breeze_clear_all_cache', 'bsp_force_cloudflare_flush');
-    function bsp_force_cloudflare_flush() {
+    add_action('breeze_clear_all_cache', 'ppspb_force_cloudflare_flush');
+    function ppspb_force_cloudflare_flush() {
         if (class_exists('Breeze_CloudFlare_Helper')) {
             Breeze_CloudFlare_Helper::reset_all_cache();
         }
     }
 
-    add_filter('breeze_purge_post_cache_urls', 'bsp_master_breeze_strategy', 10, 2);
-    function bsp_master_breeze_strategy($urls, $post_id) {
+    add_filter('breeze_purge_post_cache_urls', 'ppspb_master_breeze_strategy', 10, 2);
+    function ppspb_master_breeze_strategy($urls, $post_id) {
         if (!is_array($urls)) $urls = [];
         
         $post = get_post($post_id);
         if (!$post) return $urls;
 
-        $scanned_map = get_option('bsp_scanned_map', []);
-        $manual_map  = get_option('bsp_manual_map', []);
-        $ignored_map = get_option('bsp_ignored_map', []);
+        $scanned_map = get_option('ppspb_scanned_map', []);
+        $manual_map  = get_option('ppspb_manual_map', []);
+        $ignored_map = get_option('ppspb_ignored_map', []);
         
-        $disable_archive_map = get_option('bsp_disable_archive_map', []);
-        $disable_tax_map     = get_option('bsp_disable_tax_map', []);
+        $disable_archive_map = get_option('ppspb_disable_archive_map', []);
+        $disable_tax_map     = get_option('ppspb_disable_tax_map', []);
 
         $combined_urls = [];
         if (isset($scanned_map[$post->post_type])) {
@@ -653,7 +693,7 @@ if (defined('BREEZE_VERSION')) {
 // 2. HELPER: DYNAMIC UTILITY DETECTION
 // ====================================================================
 
-function bsp_get_utility_post_types() {
+function ppspb_get_utility_post_types() {
     $utility_types = [];
     $all_types = get_post_types(['public' => true], 'objects');
     
@@ -676,14 +716,14 @@ function bsp_get_utility_post_types() {
 /**
  * Resolve which utility post type slugs should be hidden from the UI and scans.
  *
- * @param array|null $settings Optional bsp_settings array.
+ * @param array|null $settings Optional ppspb_settings array.
  * @return string[]
  */
-function bsp_get_hidden_utility_types( $settings = null ) {
-    $utility_slugs = array_keys( bsp_get_utility_post_types() );
+function ppspb_get_hidden_utility_types( $settings = null ) {
+    $utility_slugs = array_keys( ppspb_get_utility_post_types() );
 
     if ( null === $settings ) {
-        $settings = wp_parse_args( get_option( 'bsp_settings', [] ), [ 'hide_utility' => 'yes', 'force_sync' => 'yes' ] );
+        $settings = wp_parse_args( get_option( 'ppspb_settings', [] ), [ 'hide_utility' => 'yes', 'force_sync' => 'yes' ] );
     }
 
     if ( isset( $settings['hidden_utility_types'] ) && is_array( $settings['hidden_utility_types'] ) ) {
@@ -702,22 +742,22 @@ function bsp_get_hidden_utility_types( $settings = null ) {
 // 3. ADMIN SETTINGS PAGE & UI
 // ====================================================================
 
-add_action('admin_menu', 'bsp_register_settings_page');
-function bsp_register_settings_page() {
+add_action('admin_menu', 'ppspb_register_settings_page');
+function ppspb_register_settings_page() {
     add_options_page(
-        BSP_PLUGIN_DISPLAY_NAME,
+        PPSPB_PLUGIN_DISPLAY_NAME,
         __('Smart Purge', 'smart-purge-for-breeze-cache'),
         'manage_options',
-        BSP_PLUGIN_SLUG,
-        'bsp_render_settings_page'
+        PPSPB_PLUGIN_SLUG,
+        'ppspb_render_settings_page'
     );
 }
 
-function bsp_render_settings_page() {
+function ppspb_render_settings_page() {
     if (!current_user_can('manage_options')) return;
-    if (!bsp_check_dependencies()) return; // Stop rendering if Breeze is missing
+    if (!ppspb_check_dependencies()) return; // Stop rendering if Breeze is missing
 
-    $is_agency_build = defined('BSP_AGENCY_BUILD') && BSP_AGENCY_BUILD;
+    $is_agency_build = defined('PPSPB_AGENCY_BUILD') && PPSPB_AGENCY_BUILD;
     $allowed_tabs    = array('settings');
     if ($is_agency_build) {
         $allowed_tabs[] = 'updates';
@@ -726,28 +766,28 @@ function bsp_render_settings_page() {
     if (!in_array($active_tab, $allowed_tabs, true)) {
         $active_tab = 'settings';
     }
-    $settings_base_url = admin_url('options-general.php?page=' . BSP_PLUGIN_SLUG);
+    $settings_base_url = admin_url('options-general.php?page=' . PPSPB_PLUGIN_SLUG);
 
-    $settings = wp_parse_args(get_option('bsp_settings', []), [
+    $settings = wp_parse_args(get_option('ppspb_settings', []), [
         'hide_utility' => 'yes',
         'force_sync'   => 'yes'
     ]);
     
-    $scan_log = get_option('bsp_scan_log', "System ready. Click 'Run Smart Scan' to begin.");
-    $scanned_map = get_option('bsp_scanned_map', []);
-    $manual_map  = get_option('bsp_manual_map', []);
-    $ignored_map = get_option('bsp_ignored_map', []);
-    $disable_archive_map = get_option('bsp_disable_archive_map', []);
-    $disable_tax_map     = get_option('bsp_disable_tax_map', []);
+    $scan_log = get_option('ppspb_scan_log', "System ready. Click 'Run Smart Scan' to begin.");
+    $scanned_map = get_option('ppspb_scanned_map', []);
+    $manual_map  = get_option('ppspb_manual_map', []);
+    $ignored_map = get_option('ppspb_ignored_map', []);
+    $disable_archive_map = get_option('ppspb_disable_archive_map', []);
+    $disable_tax_map     = get_option('ppspb_disable_tax_map', []);
     
     $public_post_types = get_post_types(['public' => true], 'objects');
-    $utility_types = bsp_get_utility_post_types();
-    $hidden_utility_types = bsp_get_hidden_utility_types( $settings );
+    $utility_types = ppspb_get_utility_post_types();
+    $hidden_utility_types = ppspb_get_hidden_utility_types( $settings );
 
     ?>
 
     <div class="wrap">
-        <h1><?php echo esc_html(BSP_PLUGIN_DISPLAY_NAME); ?></h1>
+        <h1><?php echo esc_html(PPSPB_PLUGIN_DISPLAY_NAME); ?></h1>
         <nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e('Smart Purge settings sections', 'smart-purge-for-breeze-cache'); ?>">
             <a href="<?php echo esc_url(add_query_arg('tab', 'settings', $settings_base_url)); ?>" class="nav-tab<?php echo 'settings' === $active_tab ? ' nav-tab-active' : ''; ?>">
                 <?php esc_html_e('Smart Purge', 'smart-purge-for-breeze-cache'); ?>
@@ -760,21 +800,21 @@ function bsp_render_settings_page() {
         </nav>
 
         <?php if ('updates' === $active_tab && $is_agency_build) : ?>
-            <?php do_action('bsp_agency_settings_panel'); ?>
+            <?php do_action('ppspb_agency_settings_panel'); ?>
         <?php else : ?>
-        <details class="bsp-intro-details">
+        <details class="ppspb-intro-details">
             <summary>
-                <span class="bsp-intro-summary-title"><?php esc_html_e('What does Smart Purge do?', 'smart-purge-for-breeze-cache'); ?></span>
-                <span class="bsp-intro-summary-hint"><?php esc_html_e('Clears hub pages, grids, and archives when you update posts - expand for details.', 'smart-purge-for-breeze-cache'); ?></span>
+                <span class="ppspb-intro-summary-title"><?php esc_html_e('What does Smart Purge do?', 'smart-purge-for-breeze-cache'); ?></span>
+                <span class="ppspb-intro-summary-hint"><?php esc_html_e('Clears hub pages, grids, and archives when you update posts - expand for details.', 'smart-purge-for-breeze-cache'); ?></span>
             </summary>
-            <div class="bsp-intro-body">
+            <div class="ppspb-intro-body">
                 <p><strong><?php esc_html_e('The Problem:', 'smart-purge-for-breeze-cache'); ?></strong> <?php esc_html_e('By default, Breeze aggressively caches content. When you update a post, it only clears the cache for that specific post. This leaves your important hub pages like: post grids, custom taxonomy archives, and page builder layouts, serving stale content to users.', 'smart-purge-for-breeze-cache'); ?></p>
                 <p><strong><?php esc_html_e('The Solution:', 'smart-purge-for-breeze-cache'); ?></strong> <?php esc_html_e('This tool acts as a traffic controller. The Auto-Scanner detects which pages are querying specific Post Types, ensuring Breeze safely clears the cache for the parent pages whenever a post is updated.', 'smart-purge-for-breeze-cache'); ?></p>
             </div>
         </details>
         
-        <form id="bsp-settings-form" method="post" action="" onsubmit="return false;">
-            <?php wp_nonce_field('bsp_save_action'); ?>
+        <form id="ppspb-settings-form" method="post" action="" onsubmit="return false;">
+            <?php wp_nonce_field('ppspb_save_action'); ?>
             
             <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
                 <div style="flex: 1; min-width: 300px; background: #fff; padding: 20px; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
@@ -786,21 +826,21 @@ function bsp_render_settings_page() {
                     </label>
                     <p class="description" style="margin: 0 0 15px 24px;">Bypasses the default WP-Cron delay so cache purges happen instantly on "Update".</p>
 
-                    <details class="bsp-utility-details">
+                    <details class="ppspb-utility-details">
                         <summary>
-                            <span class="bsp-utility-summary-title"><?php esc_html_e( 'Hide Utility Post Types', 'smart-purge-for-breeze-cache' ); ?></span>
-                            <span class="bsp-utility-summary-hint"><?php esc_html_e( 'Choose which background CPTs to hide from the table below and skip during scans.', 'smart-purge-for-breeze-cache' ); ?></span>
+                            <span class="ppspb-utility-summary-title"><?php esc_html_e( 'Hide Utility Post Types', 'smart-purge-for-breeze-cache' ); ?></span>
+                            <span class="ppspb-utility-summary-hint"><?php esc_html_e( 'Choose which background CPTs to hide from the table below and skip during scans.', 'smart-purge-for-breeze-cache' ); ?></span>
                         </summary>
-                        <div class="bsp-utility-body">
+                        <div class="ppspb-utility-body">
                             <?php if ( empty( $utility_types ) ) : ?>
                                 <p class="description"><?php esc_html_e( 'No utility post types detected on this site.', 'smart-purge-for-breeze-cache' ); ?></p>
                             <?php else : ?>
                                 <p class="description"><?php esc_html_e( 'Checked types are hidden from the settings table and excluded from auto-scan.', 'smart-purge-for-breeze-cache' ); ?></p>
-                                <ul class="bsp-utility-type-list">
+                                <ul class="ppspb-utility-type-list">
                                     <?php foreach ( $utility_types as $slug => $label ) : ?>
                                         <li>
                                             <label>
-                                                <input type="checkbox" name="bsp_hidden_utility[]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( in_array( $slug, $hidden_utility_types, true ) ); ?>>
+                                                <input type="checkbox" name="ppspb_hidden_utility[]" value="<?php echo esc_attr( $slug ); ?>" <?php checked( in_array( $slug, $hidden_utility_types, true ) ); ?>>
                                                 <?php echo esc_html( $label ); ?>
                                                 <code><?php echo esc_html( $slug ); ?></code>
                                             </label>
@@ -812,14 +852,14 @@ function bsp_render_settings_page() {
                     </details>
                     
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button type="button" id="bsp-btn-scan" class="button button-secondary">Run Smart Scan</button>
-                        <button type="button" class="button button-primary bsp-btn-save">Save All Changes</button>
+                        <button type="button" id="ppspb-btn-scan" class="button button-secondary">Run Smart Scan</button>
+                        <button type="button" class="button button-primary ppspb-btn-save">Save All Changes</button>
                     </div>
                 </div>
 
                 <div style="flex: 2; min-width: 400px; background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 4px; font-family: monospace; min-height: 190px; max-height:400px; overflow-y: auto;">
                     <div style="color: #aaa; margin-bottom: 10px;">--- SYSTEM LOG & NOTIFICATIONS ---</div>
-                    <span id="bsp-scan-log-text"><?php echo nl2br(esc_html($scan_log)); ?></span>
+                    <span id="ppspb-scan-log-text"><?php echo nl2br(esc_html($scan_log)); ?></span>
                 </div>
             </div>
 
@@ -845,11 +885,11 @@ function bsp_render_settings_page() {
                             
                             <div style="margin-top: 5px; background: #f9f9f9; border: 1px solid #e2e4e7; padding: 12px; border-radius: 4px; font-weight: normal; font-size: 12px;">
                                 <label style="display: block; margin-bottom: 6px;">
-                                    <input type="checkbox" name="bsp_disable_archive[]" value="<?php echo esc_attr($slug); ?>" <?php checked(in_array($slug, $disable_archive_map)); ?>>
+                                    <input type="checkbox" name="ppspb_disable_archive[]" value="<?php echo esc_attr($slug); ?>" <?php checked(in_array($slug, $disable_archive_map)); ?>>
                                     Disable Archive Purge
                                 </label>
                                 <label style="display: block;">
-                                    <input type="checkbox" name="bsp_disable_tax[]" value="<?php echo esc_attr($slug); ?>" <?php checked(in_array($slug, $disable_tax_map)); ?>>
+                                    <input type="checkbox" name="ppspb_disable_tax[]" value="<?php echo esc_attr($slug); ?>" <?php checked(in_array($slug, $disable_tax_map)); ?>>
                                     Disable Taxonomy Purge
                                 </label>
                             </div>
@@ -869,7 +909,7 @@ function bsp_render_settings_page() {
                                 <div style="flex: 1;">
                                     <strong>Manual Additions</strong><br>
                                     <textarea 
-                                        name="bsp_manual_map[<?php echo esc_attr($slug); ?>]" 
+                                        name="ppspb_manual_map[<?php echo esc_attr($slug); ?>]" 
                                         rows="4" 
                                         style="width: 100%; font-family: monospace; margin-top: 4px;"
                                         placeholder="/example-custom-url/"
@@ -879,7 +919,7 @@ function bsp_render_settings_page() {
                                 <div style="flex: 1;">
                                     <strong>Ignored URLs</strong> <span style="font-weight:normal; font-size:12px; color:#666;">(Type <code>*</code> to disable all)</span><br>
                                     <textarea 
-                                        name="bsp_ignored_map[<?php echo esc_attr($slug); ?>]" 
+                                        name="ppspb_ignored_map[<?php echo esc_attr($slug); ?>]" 
                                         rows="4" 
                                         style="width: 100%; font-family: monospace; border-color: #ffbba1; margin-top: 4px;"
                                     ><?php echo esc_textarea($ignored_urls); ?></textarea>
@@ -891,14 +931,14 @@ function bsp_render_settings_page() {
             </table>
 
             <p class="submit">
-                <button type="button" class="button button-primary button-large bsp-btn-save">Save All Changes</button>
+                <button type="button" class="button button-primary button-large ppspb-btn-save">Save All Changes</button>
             </p>
         </form>
         <?php endif; ?>
     </div>
 
     <?php if ('settings' === $active_tab) : ?>
-    <div id="bsp-toast" aria-live="polite"></div>
+    <div id="ppspb-toast" aria-live="polite"></div>
     <?php endif; ?>
     <?php
 }
@@ -915,7 +955,7 @@ function bsp_render_settings_page() {
  * @param string $status   running|complete|error|idle.
  * @param array|null $map  Scanned map when complete.
  */
-function bsp_scan_progress_set( $log, $progress = '', $status = 'running', $map = null ) {
+function ppspb_scan_progress_set( $log, $progress = '', $status = 'running', $map = null ) {
     $data = array(
         'status'   => $status,
         'log'      => $log,
@@ -924,14 +964,14 @@ function bsp_scan_progress_set( $log, $progress = '', $status = 'running', $map 
     if ( null !== $map ) {
         $data['map'] = $map;
     }
-    set_transient( 'bsp_scan_progress', $data, 300 );
+    set_transient( 'ppspb_scan_progress', $data, 300 );
 }
 
 /**
  * @return array{status:string,log:string,progress:string,map?:array}
  */
-function bsp_scan_progress_get() {
-    $progress = get_transient( 'bsp_scan_progress' );
+function ppspb_scan_progress_get() {
+    $progress = get_transient( 'ppspb_scan_progress' );
     if ( ! is_array( $progress ) ) {
         return array(
             'status'   => 'idle',
@@ -942,11 +982,11 @@ function bsp_scan_progress_get() {
     return $progress;
 }
 
-function bsp_execute_auto_scanner( $settings, $progress_callback = null ) {
+function ppspb_execute_auto_scanner( $settings, $progress_callback = null ) {
     $scanned_map = [];
     $public_post_types = get_post_types(['public' => true], 'names');
     
-    $hidden_utility_types = bsp_get_hidden_utility_types( $settings );
+    $hidden_utility_types = ppspb_get_hidden_utility_types( $settings );
 
     $pages = get_posts([
         'post_type' => 'page',
@@ -974,12 +1014,12 @@ function bsp_execute_auto_scanner( $settings, $progress_callback = null ) {
             $page_path = '/';
         }
 
-        $elementor_data = bsp_normalize_builder_meta(get_post_meta($page->ID, '_elementor_data', true));
-        $oxygen_data    = bsp_normalize_builder_meta(get_post_meta($page->ID, 'ct_builder_json', true));
-        $beaver_data    = bsp_normalize_builder_meta(get_post_meta($page->ID, '_fl_builder_data', true));
+        $elementor_data = ppspb_normalize_builder_meta(get_post_meta($page->ID, '_elementor_data', true));
+        $oxygen_data    = ppspb_normalize_builder_meta(get_post_meta($page->ID, 'ct_builder_json', true));
+        $beaver_data    = ppspb_normalize_builder_meta(get_post_meta($page->ID, '_fl_builder_data', true));
         
-        $bricks_data_1  = bsp_normalize_builder_meta(get_post_meta($page->ID, '_bricks_page_content', true));
-        $bricks_data_2  = bsp_normalize_builder_meta(get_post_meta($page->ID, '_bricks_page_content_2', true));
+        $bricks_data_1  = ppspb_normalize_builder_meta(get_post_meta($page->ID, '_bricks_page_content', true));
+        $bricks_data_2  = ppspb_normalize_builder_meta(get_post_meta($page->ID, '_bricks_page_content_2', true));
         $bricks_data    = $bricks_data_1 . ' ' . $bricks_data_2;
 
         foreach ($public_post_types as $pt) {
@@ -987,7 +1027,7 @@ function bsp_execute_auto_scanner( $settings, $progress_callback = null ) {
                 continue;
             }
 
-            $found_builders = bsp_detect_post_type_hub_builders(
+            $found_builders = ppspb_detect_post_type_hub_builders(
                 array(
                     'post_type' => $pt,
                     'content'   => $content,
@@ -1042,7 +1082,7 @@ function bsp_execute_auto_scanner( $settings, $progress_callback = null ) {
     $log_output .= "----------------------------------------\n";
     $log_output .= "Scan Complete. Found $relations_found automatic URL mapping(s).\n";
     
-    update_option('bsp_scanned_map', $scanned_map, false);
+    update_option('ppspb_scanned_map', $scanned_map, false);
     return $log_output;
 }
 
@@ -1050,28 +1090,28 @@ function bsp_execute_auto_scanner( $settings, $progress_callback = null ) {
 // 5. AJAX SERVER ENDPOINTS
 // ====================================================================
 
-add_action('wp_ajax_bsp_run_ajax_scan', 'bsp_ajax_scan_handler');
-function bsp_ajax_scan_handler() {
-    check_ajax_referer('bsp_save_action', '_wpnonce');
+add_action('wp_ajax_ppspb_run_ajax_scan', 'ppspb_ajax_scan_handler');
+function ppspb_ajax_scan_handler() {
+    check_ajax_referer('ppspb_save_action', '_wpnonce');
     if (!current_user_can('manage_options')) wp_send_json_error();
     
-    $settings = wp_parse_args(get_option('bsp_settings', []), ['hide_utility' => 'yes', 'force_sync' => 'yes']);
+    $settings = wp_parse_args(get_option('ppspb_settings', []), ['hide_utility' => 'yes', 'force_sync' => 'yes']);
 
     $progress_callback = function ( $log, $progress ) {
-        bsp_scan_progress_set( $log, $progress, 'running' );
+        ppspb_scan_progress_set( $log, $progress, 'running' );
     };
 
-    bsp_scan_progress_set(
+    ppspb_scan_progress_set(
         "Scan initiated at " . current_time( 'mysql' ) . "\n",
         __( 'Starting scan...', 'smart-purge-for-breeze-cache' ),
         'running'
     );
 
-    $log = bsp_execute_auto_scanner( $settings, $progress_callback );
-    update_option('bsp_scan_log', $log, false);
+    $log = ppspb_execute_auto_scanner( $settings, $progress_callback );
+    update_option('ppspb_scan_log', $log, false);
 
-    $scanned_map = get_option( 'bsp_scanned_map', [] );
-    bsp_scan_progress_set( $log, '', 'complete', $scanned_map );
+    $scanned_map = get_option( 'ppspb_scanned_map', [] );
+    ppspb_scan_progress_set( $log, '', 'complete', $scanned_map );
     
     wp_send_json_success([
         'log' => esc_html($log),
@@ -1079,60 +1119,60 @@ function bsp_ajax_scan_handler() {
     ]);
 }
 
-add_action('wp_ajax_bsp_ajax_scan_status', 'bsp_ajax_scan_status_handler');
-function bsp_ajax_scan_status_handler() {
-    check_ajax_referer('bsp_save_action', '_wpnonce');
+add_action('wp_ajax_ppspb_ajax_scan_status', 'ppspb_ajax_scan_status_handler');
+function ppspb_ajax_scan_status_handler() {
+    check_ajax_referer('ppspb_save_action', '_wpnonce');
     if (!current_user_can('manage_options')) wp_send_json_error();
 
-    $progress = bsp_scan_progress_get();
+    $progress = ppspb_scan_progress_get();
     wp_send_json_success( $progress );
 }
 
-add_action('wp_ajax_bsp_run_ajax_save', 'bsp_ajax_save_handler');
-function bsp_ajax_save_handler() {
-    check_ajax_referer('bsp_save_action', '_wpnonce');
+add_action('wp_ajax_ppspb_run_ajax_save', 'ppspb_ajax_save_handler');
+function ppspb_ajax_save_handler() {
+    check_ajax_referer('ppspb_save_action', '_wpnonce');
     if (!current_user_can('manage_options')) wp_send_json_error();
 
     // Save Manual Map
     $new_manual_map = [];
-    if (isset($_POST['bsp_manual_map']) && is_array($_POST['bsp_manual_map'])) {
-        $unslashed_map = map_deep(wp_unslash($_POST['bsp_manual_map']), 'sanitize_textarea_field');
+    if (isset($_POST['ppspb_manual_map']) && is_array($_POST['ppspb_manual_map'])) {
+        $unslashed_map = map_deep(wp_unslash($_POST['ppspb_manual_map']), 'sanitize_textarea_field');
         foreach ($unslashed_map as $post_type => $urls_string) {
             $urls_array = array_unique(array_filter(array_map('sanitize_text_field', array_map('trim', explode("\n", $urls_string)))));
             $new_manual_map[sanitize_text_field($post_type)] = $urls_array;
         }
     }
-    update_option('bsp_manual_map', $new_manual_map, false);
+    update_option('ppspb_manual_map', $new_manual_map, false);
 
     // Save Ignored Map
     $new_ignored_map = [];
-    if (isset($_POST['bsp_ignored_map']) && is_array($_POST['bsp_ignored_map'])) {
-        $unslashed_ignored = map_deep(wp_unslash($_POST['bsp_ignored_map']), 'sanitize_textarea_field');
+    if (isset($_POST['ppspb_ignored_map']) && is_array($_POST['ppspb_ignored_map'])) {
+        $unslashed_ignored = map_deep(wp_unslash($_POST['ppspb_ignored_map']), 'sanitize_textarea_field');
         foreach ($unslashed_ignored as $post_type => $urls_string) {
             $urls_array = array_unique(array_filter(array_map('sanitize_text_field', array_map('trim', explode("\n", $urls_string)))));
             $new_ignored_map[sanitize_text_field($post_type)] = $urls_array;
         }
     }
-    update_option('bsp_ignored_map', $new_ignored_map, false);
+    update_option('ppspb_ignored_map', $new_ignored_map, false);
 
     // Save Disable Archive & Tax Maps
-    $disable_archive = isset($_POST['bsp_disable_archive']) && is_array($_POST['bsp_disable_archive']) 
-        ? array_map('sanitize_text_field', wp_unslash($_POST['bsp_disable_archive'])) 
+    $disable_archive = isset($_POST['ppspb_disable_archive']) && is_array($_POST['ppspb_disable_archive']) 
+        ? array_map('sanitize_text_field', wp_unslash($_POST['ppspb_disable_archive'])) 
         : [];
-    update_option('bsp_disable_archive_map', $disable_archive);
+    update_option('ppspb_disable_archive_map', $disable_archive);
 
-    $disable_tax = isset($_POST['bsp_disable_tax']) && is_array($_POST['bsp_disable_tax']) 
-        ? array_map('sanitize_text_field', wp_unslash($_POST['bsp_disable_tax'])) 
+    $disable_tax = isset($_POST['ppspb_disable_tax']) && is_array($_POST['ppspb_disable_tax']) 
+        ? array_map('sanitize_text_field', wp_unslash($_POST['ppspb_disable_tax'])) 
         : [];
-    update_option('bsp_disable_tax_map', $disable_tax);
+    update_option('ppspb_disable_tax_map', $disable_tax);
 
     // Save Global Settings
-    $utility_slugs = array_keys( bsp_get_utility_post_types() );
+    $utility_slugs = array_keys( ppspb_get_utility_post_types() );
     $hidden_utility = [];
-    if ( isset( $_POST['bsp_hidden_utility'] ) && is_array( $_POST['bsp_hidden_utility'] ) ) {
+    if ( isset( $_POST['ppspb_hidden_utility'] ) && is_array( $_POST['ppspb_hidden_utility'] ) ) {
         $hidden_utility = array_values(
             array_intersect(
-                array_map( 'sanitize_text_field', wp_unslash( $_POST['bsp_hidden_utility'] ) ),
+                array_map( 'sanitize_text_field', wp_unslash( $_POST['ppspb_hidden_utility'] ) ),
                 $utility_slugs
             )
         );
@@ -1142,7 +1182,7 @@ function bsp_ajax_save_handler() {
         'force_sync'           => isset( $_POST['setting_force_sync'] ) ? 'yes' : 'no',
         'hidden_utility_types' => $hidden_utility,
     ];
-    update_option( 'bsp_settings', $settings );
+    update_option( 'ppspb_settings', $settings );
 
     wp_send_json_success();
 }
@@ -1151,9 +1191,23 @@ function bsp_ajax_save_handler() {
 // 6. UNINSTALL CLEANUP
 // ====================================================================
 
-register_uninstall_hook(__FILE__, 'bsp_plugin_uninstall');
+register_uninstall_hook(__FILE__, 'ppspb_plugin_uninstall');
 
-function bsp_plugin_uninstall() {
+function ppspb_plugin_uninstall() {
+    delete_option('ppspb_settings');
+    delete_option('ppspb_scanned_map');
+    delete_option('ppspb_manual_map');
+    delete_option('ppspb_ignored_map');
+    delete_option('ppspb_disable_archive_map');
+    delete_option('ppspb_disable_tax_map');
+    delete_option('ppspb_scan_log');
+    delete_option('ppspb_needs_initial_scan');
+    delete_option('ppspb_agency_github_token');
+    delete_option('ppspb_options_migrated');
+    delete_transient('ppspb_scan_summary_notice');
+    delete_transient('ppspb_scan_progress');
+    delete_transient('ppspb_github_release');
+    // Legacy keys (pre-1.1.17) in case migration never ran.
     delete_option('bsp_settings');
     delete_option('bsp_scanned_map');
     delete_option('bsp_manual_map');
@@ -1162,6 +1216,7 @@ function bsp_plugin_uninstall() {
     delete_option('bsp_disable_tax_map');
     delete_option('bsp_scan_log');
     delete_option('bsp_needs_initial_scan');
+    delete_option('bsp_agency_github_token');
     delete_transient('bsp_scan_summary_notice');
     delete_transient('bsp_scan_progress');
     delete_transient('bsp_github_release');

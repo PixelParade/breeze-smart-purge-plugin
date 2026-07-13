@@ -4,8 +4,11 @@ set -euo pipefail
 
 PLUGIN_SLUG="${PLUGIN_SLUG:-smart-purge-for-breeze-cache}"
 AGENCY_ZIP="${AGENCY_ZIP:-${PLUGIN_SLUG}.zip}"
-WPORG_ZIP="${WPORG_ZIP:-${PLUGIN_SLUG}-wporg.zip}"
+WPORG_APPROVED_SLUG="${WPORG_APPROVED_SLUG:-pixelparade-smart-purge-for-breeze-cache}"
+WPORG_ZIP="${WPORG_ZIP:-${WPORG_APPROVED_SLUG}-wporg.zip}"
+WPORG_LEGACY_ZIP="${WPORG_LEGACY_ZIP:-${PLUGIN_SLUG}-wporg.zip}"
 BUILD_ROOT="${BUILD_ROOT:-build}"
+WPORG_VERSION="${WPORG_VERSION:-1.0.0}"
 
 rm -rf "${BUILD_ROOT}"
 mkdir -p "${BUILD_ROOT}"
@@ -42,35 +45,17 @@ copy_plugin_tree "${BUILD_ROOT}/agency/${PLUGIN_SLUG}"
   zip -r "../../${AGENCY_ZIP}" "${PLUGIN_SLUG}"
 )
 
-echo "Building wordpress.org upload zip: ${WPORG_ZIP}"
+echo "Building wordpress.org zip: ${WPORG_ZIP}"
 mkdir -p "${BUILD_ROOT}/wporg"
 copy_plugin_tree "${BUILD_ROOT}/wporg/${PLUGIN_SLUG}" ".distignore.wporg"
-
-WPORG_VERSION="${WPORG_VERSION:-1.0.0}"
-MAIN_FILE="${BUILD_ROOT}/wporg/${PLUGIN_SLUG}/${PLUGIN_SLUG}.php"
-sed -i "s/^ \* Version: .*/ * Version: ${WPORG_VERSION}/" "${MAIN_FILE}"
-sed -i "s/define('BSP_VERSION', '[^']*')/define('BSP_VERSION', '${WPORG_VERSION}')/" "${MAIN_FILE}"
-if [[ -f readme.wporg.txt ]]; then
-  cp readme.wporg.txt "${BUILD_ROOT}/wporg/${PLUGIN_SLUG}/readme.txt"
-fi
-
+bash scripts/apply-wporg-transform.sh "${BUILD_ROOT}/wporg"
 (
   cd "${BUILD_ROOT}/wporg"
-  zip -r "../../${WPORG_ZIP}" "${PLUGIN_SLUG}"
+  zip -r "../../${WPORG_ZIP}" "${WPORG_APPROVED_SLUG}"
 )
-
-WPORG_APPROVED_SLUG="${WPORG_APPROVED_SLUG:-pixelparade-smart-purge-for-breeze-cache}"
-WPORG_APPROVED_ZIP="${WPORG_APPROVED_SLUG}-wporg.zip"
-echo "Building post-approval wordpress.org zip: ${WPORG_APPROVED_ZIP}"
-mkdir -p "${BUILD_ROOT}/wporg-approved"
-cp -a "${BUILD_ROOT}/wporg/${PLUGIN_SLUG}" "${BUILD_ROOT}/wporg-approved/${PLUGIN_SLUG}"
-bash scripts/apply-wporg-transform.sh "${BUILD_ROOT}/wporg-approved"
-(
-  cd "${BUILD_ROOT}/wporg-approved"
-  zip -r "../../${WPORG_APPROVED_ZIP}" "${WPORG_APPROVED_SLUG}"
-)
+cp -f "${WPORG_ZIP}" "${WPORG_LEGACY_ZIP}"
 
 echo "Done."
-echo "  Agency (MainWP / GitHub Releases):     ${AGENCY_ZIP}"
-echo "  wordpress.org upload (pending slug):   ${WPORG_ZIP}"
-echo "  wordpress.org post-approval slug:      ${WPORG_APPROVED_ZIP}"
+echo "  Agency (MainWP / GitHub Releases):       ${AGENCY_ZIP}"
+echo "  wordpress.org upload (pixelparade slug): ${WPORG_ZIP}"
+echo "  Compatibility alias (same bytes):        ${WPORG_LEGACY_ZIP}"

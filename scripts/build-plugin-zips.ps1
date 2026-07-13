@@ -10,7 +10,9 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
 $agencyZip = "${PluginSlug}.zip"
-$wporgZip = "${PluginSlug}-wporg.zip"
+$wporgApprovedSlug = 'pixelparade-smart-purge-for-breeze-cache'
+$wporgZip = "${wporgApprovedSlug}-wporg.zip"
+$wporgLegacyZip = "${PluginSlug}-wporg.zip"
 $buildRoot = Join-Path $repoRoot 'build'
 
 function Read-Distignore {
@@ -26,7 +28,7 @@ function Test-Excluded {
     $normalized = $RelativePath -replace '\\', '/'
     foreach ($pattern in $Patterns) {
         $p = $pattern.TrimEnd('/')
-        if ($normalized -eq $p -or $normalized -like "$p/*") {
+        if ($normalized -eq $p -or $normalized -like "$p /*".Replace(' /*', '/*') -or $normalized -like "$p/*") {
             return $true
         }
         if ($pattern -like '*.*' -and $normalized -like $pattern) {
@@ -63,31 +65,6 @@ function Copy-PluginTree {
     }
 }
 
-function Apply-WporgFinalize {
-    param(
-        [string]$PluginDir,
-        [string]$TargetVersion = '1.0.0'
-    )
-
-    $slug = Split-Path $PluginDir -Leaf
-    $mainFile = Join-Path $PluginDir "$slug.php"
-    if (-not (Test-Path $mainFile)) {
-        $mainFile = Get-ChildItem -Path $PluginDir -Filter '*.php' | Select-Object -First 1 -ExpandProperty FullName
-    }
-
-    $mainContent = [System.IO.File]::ReadAllText($mainFile)
-    $mainContent = [regex]::Replace($mainContent, '(?m)^ \* Version: .*', " * Version: $TargetVersion")
-    $mainContent = [regex]::Replace($mainContent, "define\('BSP_VERSION', '[^']*'\)", "define('BSP_VERSION', '$TargetVersion')")
-    [System.IO.File]::WriteAllText($mainFile, $mainContent)
-
-    $readmeWporg = Join-Path $repoRoot 'readme.wporg.txt'
-    if (Test-Path $readmeWporg) {
-        Copy-Item $readmeWporg (Join-Path $PluginDir 'readme.txt') -Force
-    }
-
-    Write-Host "Wporg finalize: $(Split-Path $PluginDir -Leaf) ($TargetVersion)"
-}
-
 function Apply-WporgTransform {
     param(
         [string]$WporgParent,
@@ -107,7 +84,7 @@ function Apply-WporgTransform {
     Move-Item -Path (Join-Path $destDir "$AgencySlug.php") -Destination (Join-Path $destDir "$TargetSlug.php")
 
     Get-ChildItem -Path $destDir -Recurse -File | Where-Object {
-        $_.Extension -in '.php', '.txt'
+        $_.Extension -in '.php', '.txt', '.js'
     } | ForEach-Object {
         $content = [System.IO.File]::ReadAllText($_.FullName)
         $content = $content -replace [regex]::Escape($AgencySlug), $TargetSlug
@@ -117,7 +94,7 @@ function Apply-WporgTransform {
     $mainFile = Join-Path $destDir "$TargetSlug.php"
     $mainContent = [System.IO.File]::ReadAllText($mainFile)
     $mainContent = [regex]::Replace($mainContent, '(?m)^ \* Version: .*', " * Version: $TargetVersion")
-    $mainContent = [regex]::Replace($mainContent, "define\('BSP_VERSION', '[^']*'\)", "define('BSP_VERSION', '$TargetVersion')")
+    $mainContent = [regex]::Replace($mainContent, "define\('PPSPB_VERSION', '[^']*'\)", "define('PPSPB_VERSION', '$TargetVersion')")
     [System.IO.File]::WriteAllText($mainFile, $mainContent)
 
     $readmeWporg = Join-Path $repoRoot 'readme.wporg.txt'
@@ -133,22 +110,14 @@ if (Test-Path $buildRoot) {
 }
 
 $wporgExcludes = Read-Distignore (Join-Path $repoRoot '.distignore.wporg')
-$wporgApprovedSlug = 'pixelparade-smart-purge-for-breeze-cache'
 $agencyDir = Join-Path $buildRoot "agency\$PluginSlug"
 $wporgParent = Join-Path $buildRoot 'wporg'
-$wporgDir = Join-Path $wporgParent $PluginSlug
-$wporgApprovedZip = "${wporgApprovedSlug}-wporg.zip"
+$wporgStage = Join-Path $wporgParent $PluginSlug
 
 Copy-PluginTree -Destination $agencyDir
-Copy-PluginTree -Destination $wporgDir -ExtraExcludes $wporgExcludes
-Apply-WporgFinalize -PluginDir $wporgDir
-
-# Post-approval slug package (after pixelparade-smart-purge-for-breeze-cache is reserved on wp.org).
-$wporgApprovedParent = Join-Path $buildRoot 'wporg-approved'
-$wporgApprovedStage = Join-Path $wporgApprovedParent $PluginSlug
-Copy-Item -Path $wporgDir -Destination $wporgApprovedStage -Recurse -Force
-Apply-WporgTransform -WporgParent $wporgApprovedParent -AgencySlug $PluginSlug -TargetSlug $wporgApprovedSlug
-$wporgApprovedDir = Join-Path $wporgApprovedParent $wporgApprovedSlug
+Copy-PluginTree -Destination $wporgStage -ExtraExcludes $wporgExcludes
+Apply-WporgTransform -WporgParent $wporgParent -AgencySlug $PluginSlug -TargetSlug $wporgApprovedSlug
+$wporgDir = Join-Path $wporgParent $wporgApprovedSlug
 
 function New-PluginZip {
     param(
@@ -182,10 +151,11 @@ function New-PluginZip {
 }
 
 New-PluginZip -SourceDir $agencyDir -ZipPath $agencyZip -EntryPrefix $PluginSlug
-New-PluginZip -SourceDir $wporgDir -ZipPath $wporgZip -EntryPrefix $PluginSlug
-New-PluginZip -SourceDir $wporgApprovedDir -ZipPath $wporgApprovedZip -EntryPrefix $wporgApprovedSlug
+New-PluginZip -SourceDir $wporgDir -ZipPath $wporgZip -EntryPrefix $wporgApprovedSlug
+# Compatibility alias for older docs/scripts expecting *-wporg.zip with agency slug name.
+Copy-Item $wporgZip $wporgLegacyZip -Force
 
 Write-Host "Done."
 Write-Host "  Agency (MainWP / GitHub Releases):     $agencyZip"
-Write-Host "  wordpress.org upload (pending slug):   $wporgZip"
-Write-Host "  wordpress.org post-approval slug:      $wporgApprovedZip"
+Write-Host "  wordpress.org upload (pixelparade slug): $wporgZip"
+Write-Host "  Compatibility alias (same bytes):        $wporgLegacyZip"

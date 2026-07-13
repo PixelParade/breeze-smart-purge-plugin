@@ -11,32 +11,44 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-$bsp_main_plugin = dirname(__DIR__) . '/smart-purge-for-breeze-cache.php';
+$ppspb_main_plugin = dirname(__DIR__) . '/smart-purge-for-breeze-cache.php';
 
-add_filter('pre_set_site_transient_update_plugins', 'bsp_pre_set_github_plugin_update');
-add_filter('plugins_api', 'bsp_plugins_api_github_info', 20, 3);
-add_filter('upgrader_pre_download', 'bsp_github_authenticated_download', 10, 4);
+add_filter('pre_set_site_transient_update_plugins', 'ppspb_pre_set_github_plugin_update');
+add_filter('plugins_api', 'ppspb_plugins_api_github_info', 20, 3);
+add_filter('upgrader_pre_download', 'ppspb_github_authenticated_download', 10, 4);
 
-function bsp_get_github_repo() {
-	return defined('BSP_GITHUB_REPO') ? BSP_GITHUB_REPO : 'PixelParade/breeze-smart-purge-plugin';
+function ppspb_get_github_repo() {
+	if (defined('PPSPB_GITHUB_REPO') && PPSPB_GITHUB_REPO) {
+		return PPSPB_GITHUB_REPO;
+	}
+	if (defined('BSP_GITHUB_REPO') && BSP_GITHUB_REPO) {
+		return BSP_GITHUB_REPO;
+	}
+	return 'PixelParade/breeze-smart-purge-plugin';
 }
 
-function bsp_get_github_token() {
-	return (defined('BSP_GITHUB_TOKEN') && BSP_GITHUB_TOKEN) ? BSP_GITHUB_TOKEN : '';
+function ppspb_get_github_token() {
+	if (defined('PPSPB_GITHUB_TOKEN') && PPSPB_GITHUB_TOKEN) {
+		return PPSPB_GITHUB_TOKEN;
+	}
+	if (defined('BSP_GITHUB_TOKEN') && BSP_GITHUB_TOKEN) {
+		return BSP_GITHUB_TOKEN;
+	}
+	return '';
 }
 
-function bsp_github_package_needs_auth($package) {
+function ppspb_github_package_needs_auth($package) {
 	return is_string($package) && false !== strpos($package, 'api.github.com/repos/');
 }
 
-function bsp_github_request_args($args = array()) {
-	$token = bsp_get_github_token();
+function ppspb_github_request_args($args = array()) {
+	$token = ppspb_get_github_token();
 	if ($token) {
 		$args['headers']['Authorization'] = 'Bearer ' . $token;
 		$args['headers']['Accept']        = 'application/vnd.github+json';
 	}
 	if (empty($args['user-agent'])) {
-		$args['user-agent'] = 'Smart-Purge-for-Breeze-Cache/' . bsp_get_plugin_version() . '; ' . home_url('/');
+		$args['user-agent'] = 'Smart-Purge-for-Breeze-Cache/' . ppspb_get_plugin_version() . '; ' . home_url('/');
 	}
 	return $args;
 }
@@ -44,13 +56,13 @@ function bsp_github_request_args($args = array()) {
 /**
  * Clear cached GitHub release metadata (e.g. when WordPress re-checks plugin updates).
  */
-function bsp_clear_github_release_cache() {
-	delete_transient('bsp_github_release');
+function ppspb_clear_github_release_cache() {
+	delete_transient('ppspb_github_release');
 }
 
-add_action('delete_site_transient_update_plugins', 'bsp_clear_github_release_cache');
+add_action('delete_site_transient_update_plugins', 'ppspb_clear_github_release_cache');
 
-function bsp_get_plugin_version() {
+function ppspb_get_plugin_version() {
 	static $version = null;
 	if (null !== $version) {
 		return $version;
@@ -69,10 +81,10 @@ function bsp_get_plugin_version() {
  *
  * @return array{icons: array<string, string>, banners: array<string, string>}
  */
-function bsp_get_plugin_update_assets() {
-	global $bsp_main_plugin;
+function ppspb_get_plugin_update_assets() {
+	global $ppspb_main_plugin;
 
-	$plugin_dir = plugin_dir_path($bsp_main_plugin);
+	$plugin_dir = plugin_dir_path($ppspb_main_plugin);
 	$icon_1x_path = '';
 	$icon_2x_path = '';
 
@@ -87,8 +99,8 @@ function bsp_get_plugin_update_assets() {
 		$icon_2x_path = 'assets/wporg/icon-256x256.png';
 	}
 
-	$icon_1x = $icon_1x_path ? plugins_url($icon_1x_path, $bsp_main_plugin) : '';
-	$icon_2x = $icon_2x_path ? plugins_url($icon_2x_path, $bsp_main_plugin) : '';
+	$icon_1x = $icon_1x_path ? plugins_url($icon_1x_path, $ppspb_main_plugin) : '';
+	$icon_2x = $icon_2x_path ? plugins_url($icon_2x_path, $ppspb_main_plugin) : '';
 
 	return array(
 		'icons'   => array(
@@ -97,33 +109,33 @@ function bsp_get_plugin_update_assets() {
 			'default' => $icon_2x ? $icon_2x : $icon_1x,
 		),
 		'banners' => array(
-			'low'  => plugins_url('assets/wporg/banner-772x250.png', $bsp_main_plugin),
-			'high' => plugins_url('assets/wporg/banner-1544x500.png', $bsp_main_plugin),
+			'low'  => plugins_url('assets/wporg/banner-772x250.png', $ppspb_main_plugin),
+			'high' => plugins_url('assets/wporg/banner-1544x500.png', $ppspb_main_plugin),
 		),
 	);
 }
 
-function bsp_is_github_package_url($url) {
+function ppspb_is_github_package_url($url) {
 	return strpos($url, 'github.com') !== false || strpos($url, 'githubusercontent.com') !== false;
 }
 
-function bsp_fetch_latest_github_release() {
-	$cached = get_transient('bsp_github_release');
+function ppspb_fetch_latest_github_release() {
+	$cached = get_transient('ppspb_github_release');
 	if (false !== $cached) {
 		return $cached ? $cached : null;
 	}
 
-	$url      = 'https://api.github.com/repos/' . bsp_get_github_repo() . '/releases/latest';
-	$response = wp_remote_get($url, bsp_github_request_args(array('timeout' => 15)));
+	$url      = 'https://api.github.com/repos/' . ppspb_get_github_repo() . '/releases/latest';
+	$response = wp_remote_get($url, ppspb_github_request_args(array('timeout' => 15)));
 
 	if (is_wp_error($response) || 200 !== (int) wp_remote_retrieve_response_code($response)) {
-		set_transient('bsp_github_release', '', 15 * MINUTE_IN_SECONDS);
+		set_transient('ppspb_github_release', '', 15 * MINUTE_IN_SECONDS);
 		return null;
 	}
 
 	$data = json_decode(wp_remote_retrieve_body($response), true);
 	if (empty($data['tag_name'])) {
-		set_transient('bsp_github_release', '', 15 * MINUTE_IN_SECONDS);
+		set_transient('ppspb_github_release', '', 15 * MINUTE_IN_SECONDS);
 		return null;
 	}
 
@@ -145,38 +157,38 @@ function bsp_fetch_latest_github_release() {
 	$release = array(
 		'version' => ltrim($data['tag_name'], 'vV'),
 		'package' => $package,
-		'url'     => !empty($data['html_url']) ? $data['html_url'] : 'https://github.com/' . bsp_get_github_repo(),
+		'url'     => !empty($data['html_url']) ? $data['html_url'] : 'https://github.com/' . ppspb_get_github_repo(),
 		'notes'   => !empty($data['body']) ? $data['body'] : '',
 	);
 
-	set_transient('bsp_github_release', $release, HOUR_IN_SECONDS);
+	set_transient('ppspb_github_release', $release, HOUR_IN_SECONDS);
 	return $release;
 }
 
 /**
  * Force WordPress to re-query GitHub Releases on the next update check.
  */
-function bsp_force_github_update_check() {
-	bsp_clear_github_release_cache();
+function ppspb_force_github_update_check() {
+	ppspb_clear_github_release_cache();
 	delete_site_transient('update_plugins');
 }
 
-function bsp_pre_set_github_plugin_update($transient) {
-	global $bsp_main_plugin;
+function ppspb_pre_set_github_plugin_update($transient) {
+	global $ppspb_main_plugin;
 
 	if (!is_object($transient) || empty($transient->checked)) {
 		return $transient;
 	}
 
-	$plugin_file     = plugin_basename($bsp_main_plugin);
+	$plugin_file     = plugin_basename($ppspb_main_plugin);
 	$current_version = isset($transient->checked[ $plugin_file ]) ? $transient->checked[ $plugin_file ] : '';
-	$release         = bsp_fetch_latest_github_release();
+	$release         = ppspb_fetch_latest_github_release();
 
 	if (!$release || empty($release['version']) || empty($release['package'])) {
 		return $transient;
 	}
 
-	$assets = bsp_get_plugin_update_assets();
+	$assets = ppspb_get_plugin_update_assets();
 
 	$update = (object) array(
 		'slug'         => 'smart-purge-for-breeze-cache',
@@ -200,7 +212,7 @@ function bsp_pre_set_github_plugin_update($transient) {
 	return $transient;
 }
 
-function bsp_plugins_api_github_info($result, $action, $args) {
+function ppspb_plugins_api_github_info($result, $action, $args) {
 	if ('plugin_information' !== $action) {
 		return $result;
 	}
@@ -208,12 +220,12 @@ function bsp_plugins_api_github_info($result, $action, $args) {
 		return $result;
 	}
 
-	$release = bsp_fetch_latest_github_release();
+	$release = ppspb_fetch_latest_github_release();
 	if (!$release) {
 		return $result;
 	}
 
-	$assets = bsp_get_plugin_update_assets();
+	$assets = ppspb_get_plugin_update_assets();
 
 	return (object) array(
 		'name'          => 'Smart Purge for Breeze Cache',
@@ -233,23 +245,23 @@ function bsp_plugins_api_github_info($result, $action, $args) {
 	);
 }
 
-function bsp_github_authenticated_download($reply, $package, $upgrader, $hook_extra = null) {
-	global $bsp_main_plugin;
+function ppspb_github_authenticated_download($reply, $package, $upgrader, $hook_extra = null) {
+	global $ppspb_main_plugin;
 
 	if (false !== $reply) {
 		return $reply;
 	}
-	if (!bsp_is_github_package_url($package)) {
+	if (!ppspb_is_github_package_url($package)) {
 		return $reply;
 	}
 
-	$plugin_file = plugin_basename($bsp_main_plugin);
+	$plugin_file = plugin_basename($ppspb_main_plugin);
 	if (!empty($hook_extra['plugin']) && $hook_extra['plugin'] !== $plugin_file) {
 		return $reply;
 	}
 
-	$token = bsp_get_github_token();
-	if (!$token || !bsp_github_package_needs_auth($package)) {
+	$token = ppspb_get_github_token();
+	if (!$token || !ppspb_github_package_needs_auth($package)) {
 		return $reply;
 	}
 
@@ -270,14 +282,14 @@ function bsp_github_authenticated_download($reply, $package, $upgrader, $hook_ex
 
 	if (200 !== (int) wp_remote_retrieve_response_code($response)) {
 		return new WP_Error(
-			'bsp_github_download_failed',
-			__('GitHub release download failed. Check BSP_GITHUB_TOKEN in wp-config.php.', 'smart-purge-for-breeze-cache')
+			'ppspb_github_download_failed',
+			__('GitHub release download failed. Check PPSPB_GITHUB_TOKEN in wp-config.php.', 'smart-purge-for-breeze-cache')
 		);
 	}
 
 	$tmp = wp_tempnam($package);
 	if (!$tmp) {
-		return new WP_Error('bsp_temp_file', __('Could not create a temporary file for the update.', 'smart-purge-for-breeze-cache'));
+		return new WP_Error('ppspb_temp_file', __('Could not create a temporary file for the update.', 'smart-purge-for-breeze-cache'));
 	}
 
 	file_put_contents($tmp, wp_remote_retrieve_body($response));

@@ -2,8 +2,8 @@
 /**
  * Staging QA — persistent test CPT for Smart Purge scanner fixtures.
  *
- * Loaded by mu-plugin `bsp-staging-test-cpt.php` on breeze-smart-purge.pixelparade.dev only.
- * Source of truth in git: scripts/staging/bsp-test-cpt.php (excluded from plugin zips).
+ * Loaded by mu-plugin `ppspb-staging-test-cpt.php` on breeze-smart-purge.pixelparade.dev only.
+ * Source of truth in git: scripts/staging/ppspb-test-cpt.php (excluded from plugin zips).
  *
  * @package Breeze_Smart_Purge
  */
@@ -11,12 +11,12 @@
 add_action(
 	'init',
 	function () {
-		if (post_type_exists('bsp_test_project')) {
+		if (post_type_exists('ppspb_test_project')) {
 			return;
 		}
 
 		register_post_type(
-			'bsp_test_project',
+			'ppspb_test_project',
 			array(
 				'labels'       => array(
 					'name'          => 'BSP Test Projects',
@@ -24,7 +24,7 @@ add_action(
 				),
 				'public'       => true,
 				'has_archive'  => true,
-				'rewrite'      => array( 'slug' => 'bsp-test-projects' ),
+				'rewrite'      => array( 'slug' => 'ppspb-test-projects' ),
 				'show_in_rest' => true,
 				'supports'     => array( 'title', 'editor', 'thumbnail' ),
 			)

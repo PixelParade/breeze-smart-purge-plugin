@@ -3,6 +3,9 @@
 .github
 .cursor
 .deploy-chunks
+.agent-tools
+agent-tools
+.tmp
 docs
 scripts
 .env.deploy.example

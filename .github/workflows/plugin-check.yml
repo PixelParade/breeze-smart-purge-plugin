@@ -20,17 +20,18 @@ jobs:
 
       - name: Build wordpress.org distributable folder
         run: |
-          mkdir -p build/smart-purge-for-breeze-cache
+          mkdir -p build/wporg/smart-purge-for-breeze-cache
           rsync -av \
             --exclude-from='.distignore' \
             --exclude-from='.distignore.wporg' \
             --exclude='build' \
-            ./ build/smart-purge-for-breeze-cache/
+            ./ build/wporg/smart-purge-for-breeze-cache/
+          bash scripts/apply-wporg-transform.sh build/wporg
 
       - name: Run Plugin Check
         uses: wordpress/plugin-check-action@v1
         with:
-          build-dir: './build/smart-purge-for-breeze-cache'
+          build-dir: './build/wporg/pixelparade-smart-purge-for-breeze-cache'
           exclude-directories: '.git,.github'
 
   build-zips:
@@ -42,14 +43,24 @@ jobs:
       - name: Build both zips (smoke test)
         run: bash scripts/build-plugin-zips.sh
 
-      - name: Verify agency zip contents
+      - name: Verify agency and wporg zip contents
         run: |
           unzip -l smart-purge-for-breeze-cache.zip | grep -E 'github-updater|includes/agency/bootstrap'
           bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache.zip
           test ! -f build/wporg/pixelparade-smart-purge-for-breeze-cache/includes/github-updater.php
           test ! -d build/wporg/pixelparade-smart-purge-for-breeze-cache/includes/agency
-          bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache-wporg.zip
+          ! unzip -l pixelparade-smart-purge-for-breeze-cache-wporg.zip | grep -E 'icon-128x128|icon-256x256|assets/wporg/'
           bash scripts/verify-plugin-zip.sh pixelparade-smart-purge-for-breeze-cache-wporg.zip pixelparade-smart-purge-for-breeze-cache
+          # Prefix + textdomain smoke checks inside wporg zip
+          unzip -p pixelparade-smart-purge-for-breeze-cache-wporg.zip pixelparade-smart-purge-for-breeze-cache/pixelparade-smart-purge-for-breeze-cache.php \
+            | grep -q "Text Domain: pixelparade-smart-purge-for-breeze-cache"
+          # Function/AJAX prefix must be ppspb_ (legacy bsp_* option strings in migration are OK).
+          ! unzip -p pixelparade-smart-purge-for-breeze-cache-wporg.zip pixelparade-smart-purge-for-breeze-cache/pixelparade-smart-purge-for-breeze-cache.php \
+            | grep -E 'function bsp_|wp_ajax_bsp_|define\('\''BSP_'
+          unzip -p pixelparade-smart-purge-for-breeze-cache-wporg.zip pixelparade-smart-purge-for-breeze-cache/pixelparade-smart-purge-for-breeze-cache.php \
+            | grep -q 'function ppspb_'
+          unzip -p pixelparade-smart-purge-for-breeze-cache-wporg.zip pixelparade-smart-purge-for-breeze-cache/pixelparade-smart-purge-for-breeze-cache.php \
+            | grep -q "breeze_token_name"
 
   phpunit:
     runs-on: ubuntu-latest

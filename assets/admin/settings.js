@@ -1,14 +1,14 @@
-/* BSP realtime scan polling — cache-bust touch 2026-07-07 */
+/* PPSPB realtime scan polling — cache-bust touch 2026-07-07 */
 (function () {
 	'use strict';
 
-	if (typeof bspSettings === 'undefined') {
+	if (typeof ppspbSettings === 'undefined') {
 		return;
 	}
 
-	var bspScanPollTimer = null;
+	var ppspbScanPollTimer = null;
 
-	function bspEscapeHtml(str) {
+	function ppspbEscapeHtml(str) {
 		return String(str)
 			.replace(/&/g, '&amp;')
 			.replace(/</g, '&lt;')
@@ -17,8 +17,8 @@
 			.replace(/'/g, '&#039;');
 	}
 
-	function bspShowToast(msg, type) {
-		var toast = document.getElementById('bsp-toast');
+	function ppspbShowToast(msg, type) {
+		var toast = document.getElementById('ppspb-toast');
 		if (!toast) {
 			return;
 		}
@@ -29,39 +29,39 @@
 		}, 3000);
 	}
 
-	function bspGetScanLogContainer(logText) {
+	function ppspbGetScanLogContainer(logText) {
 		return logText.closest('[style*="overflow-y"]') || logText.parentElement;
 	}
 
-	function bspRenderScanLog(logText, log, progress) {
-		var html = bspEscapeHtml(log || '');
+	function ppspbRenderScanLog(logText, log, progress) {
+		var html = ppspbEscapeHtml(log || '');
 		if (progress) {
-			html += (html ? '<br>' : '') + '<span class="bsp-scan-progress">' + bspEscapeHtml(progress) + '</span>';
+			html += (html ? '<br>' : '') + '<span class="ppspb-scan-progress">' + ppspbEscapeHtml(progress) + '</span>';
 		}
 		logText.innerHTML = html.replace(/\n/g, '<br>');
 
-		var container = bspGetScanLogContainer(logText);
+		var container = ppspbGetScanLogContainer(logText);
 		if (container) {
 			container.scrollTop = container.scrollHeight;
 		}
 	}
 
-	function bspStopScanPoll() {
-		if (bspScanPollTimer) {
-			clearInterval(bspScanPollTimer);
-			bspScanPollTimer = null;
+	function ppspbStopScanPoll() {
+		if (ppspbScanPollTimer) {
+			clearInterval(ppspbScanPollTimer);
+			ppspbScanPollTimer = null;
 		}
 	}
 
-	function bspStartScanPoll(logText) {
-		bspStopScanPoll();
+	function ppspbStartScanPoll(logText) {
+		ppspbStopScanPoll();
 
-		bspScanPollTimer = setInterval(function () {
+		ppspbScanPollTimer = setInterval(function () {
 			var statusData = new FormData();
-			statusData.append('action', bspSettings.statusAction);
-			statusData.append('_wpnonce', bspSettings.nonce);
+			statusData.append('action', ppspbSettings.statusAction);
+			statusData.append('_wpnonce', ppspbSettings.nonce);
 
-			fetch(bspSettings.ajaxUrl, { method: 'POST', body: statusData })
+			fetch(ppspbSettings.ajaxUrl, { method: 'POST', body: statusData })
 				.then(function (response) {
 					return response.json();
 				})
@@ -71,7 +71,7 @@
 					}
 
 					if (res.data.status === 'running') {
-						bspRenderScanLog(logText, res.data.log, res.data.progress);
+						ppspbRenderScanLog(logText, res.data.log, res.data.progress);
 					}
 				})
 				.catch(function () {
@@ -80,9 +80,9 @@
 		}, 500);
 	}
 
-	function bspApplyScannedMap(map) {
+	function ppspbApplyScannedMap(map) {
 		document.querySelectorAll('textarea[id^="scanned-map-"]').forEach(function (ta) {
-			ta.value = bspSettings.i18n.noPagesDetected;
+			ta.value = ppspbSettings.i18n.noPagesDetected;
 		});
 
 		for (var postType in map) {
@@ -97,81 +97,81 @@
 		}
 	}
 
-	function bspInitSettingsUi() {
-		var scanBtn = document.getElementById('bsp-btn-scan');
+	function ppspbInitSettingsUi() {
+		var scanBtn = document.getElementById('ppspb-btn-scan');
 		if (scanBtn) {
 			scanBtn.addEventListener('click', function () {
 				var btn = this;
-				var logText = document.getElementById('bsp-scan-log-text');
+				var logText = document.getElementById('ppspb-scan-log-text');
 				var originalBtnText = btn.textContent;
 
 				if (!logText) {
 					return;
 				}
 
-				btn.textContent = bspSettings.i18n.scanning;
+				btn.textContent = ppspbSettings.i18n.scanning;
 				btn.style.pointerEvents = 'none';
-				bspRenderScanLog(logText, '', bspSettings.i18n.scanStarting);
-				bspStartScanPoll(logText);
+				ppspbRenderScanLog(logText, '', ppspbSettings.i18n.scanStarting);
+				ppspbStartScanPoll(logText);
 
 				var data = new FormData();
-				data.append('action', bspSettings.scanAction);
-				data.append('_wpnonce', bspSettings.nonce);
+				data.append('action', ppspbSettings.scanAction);
+				data.append('_wpnonce', ppspbSettings.nonce);
 
-				fetch(bspSettings.ajaxUrl, { method: 'POST', body: data })
+				fetch(ppspbSettings.ajaxUrl, { method: 'POST', body: data })
 					.then(function (response) {
 						return response.json();
 					})
 					.then(function (res) {
-						bspStopScanPoll();
+						ppspbStopScanPoll();
 
 						if (res.success) {
-							bspRenderScanLog(logText, res.data.log, '');
-							bspApplyScannedMap(res.data.map);
-							bspShowToast(bspSettings.i18n.scanComplete, 'success');
+							ppspbRenderScanLog(logText, res.data.log, '');
+							ppspbApplyScannedMap(res.data.map);
+							ppspbShowToast(ppspbSettings.i18n.scanComplete, 'success');
 						} else {
-							logText.innerHTML = '<span class="bsp-scan-log-error">' + bspEscapeHtml(bspSettings.i18n.scanFailed) + '</span>';
-							bspShowToast(bspSettings.i18n.scanFailedShort, 'error');
+							logText.innerHTML = '<span class="ppspb-scan-log-error">' + ppspbEscapeHtml(ppspbSettings.i18n.scanFailed) + '</span>';
+							ppspbShowToast(ppspbSettings.i18n.scanFailedShort, 'error');
 						}
 						btn.textContent = originalBtnText;
 						btn.style.pointerEvents = 'auto';
 					})
 					.catch(function () {
-						bspStopScanPoll();
-						bspShowToast(bspSettings.i18n.serverError, 'error');
+						ppspbStopScanPoll();
+						ppspbShowToast(ppspbSettings.i18n.serverError, 'error');
 						btn.textContent = originalBtnText;
 						btn.style.pointerEvents = 'auto';
 					});
 			});
 		}
 
-		document.querySelectorAll('.bsp-btn-save').forEach(function (btn) {
+		document.querySelectorAll('.ppspb-btn-save').forEach(function (btn) {
 			btn.addEventListener('click', function () {
 				var currentBtn = this;
 				var originalBtnText = currentBtn.textContent;
 
-				currentBtn.textContent = bspSettings.i18n.saving;
+				currentBtn.textContent = ppspbSettings.i18n.saving;
 				currentBtn.style.pointerEvents = 'none';
 
-				var form = document.getElementById('bsp-settings-form');
+				var form = document.getElementById('ppspb-settings-form');
 				var data = new FormData(form);
-				data.append('action', bspSettings.saveAction);
+				data.append('action', ppspbSettings.saveAction);
 
-				fetch(bspSettings.ajaxUrl, { method: 'POST', body: data })
+				fetch(ppspbSettings.ajaxUrl, { method: 'POST', body: data })
 					.then(function (response) {
 						return response.json();
 					})
 					.then(function (res) {
 						if (res.success) {
-							bspShowToast(bspSettings.i18n.saveSuccess, 'success');
+							ppspbShowToast(ppspbSettings.i18n.saveSuccess, 'success');
 						} else {
-							bspShowToast(bspSettings.i18n.saveError, 'error');
+							ppspbShowToast(ppspbSettings.i18n.saveError, 'error');
 						}
 						currentBtn.textContent = originalBtnText;
 						currentBtn.style.pointerEvents = 'auto';
 					})
 					.catch(function () {
-						bspShowToast(bspSettings.i18n.serverError, 'error');
+						ppspbShowToast(ppspbSettings.i18n.serverError, 'error');
 						currentBtn.textContent = originalBtnText;
 						currentBtn.style.pointerEvents = 'auto';
 					});
@@ -180,8 +180,8 @@
 	}
 
 	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', bspInitSettingsUi);
+		document.addEventListener('DOMContentLoaded', ppspbInitSettingsUi);
 	} else {
-		bspInitSettingsUi();
+		ppspbInitSettingsUi();
 	}
 })();

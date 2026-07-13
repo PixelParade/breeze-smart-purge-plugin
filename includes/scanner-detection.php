@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
  * @param mixed $meta Post meta value.
  * @return string
  */
-function bsp_normalize_builder_meta($meta) {
+function ppspb_normalize_builder_meta($meta) {
 	if (empty($meta)) {
 		return '';
 	}
@@ -34,7 +34,7 @@ function bsp_normalize_builder_meta($meta) {
  * @param string $post_type Post type slug.
  * @return string PCRE pattern (with delimiters).
  */
-function bsp_build_post_type_json_regex($post_type) {
+function ppspb_build_post_type_json_regex($post_type) {
 	return '/"[a-zA-Z0-9_-]*(?:post_type|postType|source|query)"\s*:\s*(?:\[[^\]]*?)?"' . preg_quote($post_type, '/') . '"/i';
 }
 
@@ -51,7 +51,7 @@ function bsp_build_post_type_json_regex($post_type) {
  * }
  * @return string[] Human-readable builder labels (may be empty).
  */
-function bsp_detect_post_type_hub_builders(array $context) {
+function ppspb_detect_post_type_hub_builders(array $context) {
 	$post_type = isset($context['post_type']) ? (string) $context['post_type'] : '';
 	if ('' === $post_type) {
 		return array();
@@ -64,7 +64,7 @@ function bsp_detect_post_type_hub_builders(array $context) {
 	$beaver    = isset($context['beaver']) ? (string) $context['beaver'] : '';
 
 	$found_builders = array();
-	$json_regex     = bsp_build_post_type_json_regex($post_type);
+	$json_regex     = ppspb_build_post_type_json_regex($post_type);
 	$post_type_quoted = preg_quote($post_type, '/');
 
 	// WPBakery / Visual Composer shortcodes in post_content.

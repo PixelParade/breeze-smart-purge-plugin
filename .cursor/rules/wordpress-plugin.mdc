@@ -10,17 +10,18 @@ alwaysApply: true
 ## Identity
 
 - **Plugin name:** Smart Purge for Breeze Cache
-- **Slug / folder:** `smart-purge-for-breeze-cache`
-- **Text domain:** `smart-purge-for-breeze-cache`
-- **Main file:** `smart-purge-for-breeze-cache.php`
-- **Version:** bump in plugin header only (no separate version constant)
+- **Slug / folder:** `smart-purge-for-breeze-cache` (agency/MainWP); wporg: `pixelparade-smart-purge-for-breeze-cache`
+- **Text domain:** agency `smart-purge-for-breeze-cache`; wporg build rewrites to `pixelparade-smart-purge-for-breeze-cache`
+- **Main file:** `smart-purge-for-breeze-cache.php` (agency); wporg rename via transform
+- **Version:** bump in plugin header only (no separate version constant mismatch — keep `PPSPB_VERSION` in sync)
+- **Function / options prefix:** `ppspb_` (constants `PPSPB_*`); legacy `bsp_*` options migrate on load
 
 ## Architecture
 
 - **Core:** `smart-purge-for-breeze-cache.php` + `readme.txt`
 - **Agency lane (MainWP clients):** `includes/github-updater.php` + `includes/agency/` — shipped in agency zip, excluded from wp.org via `.distignore.wporg`
-- **Function prefix:** `bsp_` for all functions, AJAX actions, and hooks
-- **Options prefix:** `bsp_` (e.g. `bsp_settings`, `bsp_scanned_map`, `bsp_manual_map`)
+- **Function prefix:** `ppspb_` for all functions, AJAX actions, and hooks
+- **Options prefix:** `ppspb_` (e.g. `ppspb_settings`, `ppspb_scanned_map`, `ppspb_manual_map`)
 - **Dependency:** requires active Breeze Cache plugin (`BREEZE_VERSION` defined; `Requires Plugins: breeze`)
 
 ## Builds and audiences
@@ -28,17 +29,17 @@ alwaysApply: true
 | Build | Zip | Audience |
 |-------|-----|----------|
 | Agency | `smart-purge-for-breeze-cache.zip` | MainWP clients, staging |
-| wp.org | `smart-purge-for-breeze-cache-wporg.zip` | External / directory |
+| wp.org | `pixelparade-smart-purge-for-breeze-cache-wporg.zip` | External / directory |
 
 Agency-only code: `includes/agency/bootstrap.php` and siblings. See [docs/MAINWP_ROLLOUT.md](docs/MAINWP_ROLLOUT.md).
 
 ## Coding standards
 
 - Follow WordPress PHP coding standards: tabs for indentation, Yoda conditions where appropriate
-- Prefix functions, hooks, options, and transients with `bsp_`
+- Prefix functions, hooks, options, and transients with `ppspb_`
 - Never hardcode site URLs or credentials — use WordPress APIs (`home_url()`, options, etc.)
 - Prefer WordPress hooks and options over custom tables
-- Admin UI is inline in `bsp_render_settings_page()` — keep AJAX handlers as `bsp_ajax_*` at file bottom
+- Admin UI is inline in `ppspb_render_settings_page()` — keep AJAX handlers as `ppspb_ajax_*` at file bottom
 
 ## Environments
 

@@ -1,5 +1,5 @@
 /* Smart Purge settings screen — enqueued on admin only. Cache-bust 2026-07-07 */
-#bsp-toast {
+#ppspb-toast {
 	visibility: hidden;
 	min-width: 250px;
 	background-color: #333;
@@ -19,46 +19,46 @@
 	font-weight: 500;
 }
 
-#bsp-toast.show {
+#ppspb-toast.show {
 	visibility: visible;
 	opacity: 1;
 	bottom: 50px;
 }
 
-#bsp-toast.success {
+#ppspb-toast.success {
 	background-color: #46b450;
 	border-left: 4px solid #34823b;
 }
 
-#bsp-toast.error {
+#ppspb-toast.error {
 	background-color: #dc3232;
 	border-left: 4px solid #a32424;
 }
 
-.bsp-intro-details {
+.ppspb-intro-details {
 	background: #fff;
 	border: 1px solid #c3c4c7;
 	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
 	margin: 0 0 20px;
 }
 
-.bsp-intro-details summary {
+.ppspb-intro-details summary {
 	cursor: pointer;
 	list-style: none;
 	padding: 12px 16px;
 }
 
-.bsp-intro-details summary::-webkit-details-marker {
+.ppspb-intro-details summary::-webkit-details-marker {
 	display: none;
 }
 
-.bsp-intro-summary-title {
+.ppspb-intro-summary-title {
 	display: block;
 	font-weight: 600;
 	font-size: 14px;
 }
 
-.bsp-intro-summary-hint {
+.ppspb-intro-summary-hint {
 	display: block;
 	margin-top: 4px;
 	color: #646970;
@@ -66,52 +66,52 @@
 	font-size: 13px;
 }
 
-.bsp-intro-body {
+.ppspb-intro-body {
 	padding: 0 16px 16px 16px;
 	border-top: 1px solid #f0f0f1;
 	font-size: 14px;
 }
 
-.bsp-intro-body p {
+.ppspb-intro-body p {
 	margin: 12px 0 0;
 }
 
-.bsp-intro-body p:first-child {
+.ppspb-intro-body p:first-child {
 	margin-top: 16px;
 }
 
-.bsp-scan-log-error {
+.ppspb-scan-log-error {
 	color: #dc3232;
 }
 
-.bsp-scan-progress {
+.ppspb-scan-progress {
 	color: #ffff66;
 }
 
-.bsp-utility-details {
+.ppspb-utility-details {
 	margin: 0 0 20px;
 	border: 1px solid #e2e4e7;
 	border-radius: 4px;
 	background: #f9f9f9;
 }
 
-.bsp-utility-details summary {
+.ppspb-utility-details summary {
 	cursor: pointer;
 	list-style: none;
 	padding: 10px 12px;
 }
 
-.bsp-utility-details summary::-webkit-details-marker {
+.ppspb-utility-details summary::-webkit-details-marker {
 	display: none;
 }
 
-.bsp-utility-summary-title {
+.ppspb-utility-summary-title {
 	display: block;
 	font-weight: 600;
 	font-size: 13px;
 }
 
-.bsp-utility-summary-hint {
+.ppspb-utility-summary-hint {
 	display: block;
 	margin-top: 4px;
 	color: #646970;
@@ -119,30 +119,30 @@
 	font-size: 12px;
 }
 
-.bsp-utility-body {
+.ppspb-utility-body {
 	padding: 0 12px 12px;
 	border-top: 1px solid #e2e4e7;
 }
 
-.bsp-utility-body .description {
+.ppspb-utility-body .description {
 	margin: 10px 0 8px;
 }
 
-.bsp-utility-type-list {
+.ppspb-utility-type-list {
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
 
-.bsp-utility-type-list li {
+.ppspb-utility-type-list li {
 	margin: 0 0 6px;
 }
 
-.bsp-utility-type-list label {
+.ppspb-utility-type-list label {
 	font-size: 13px;
 }
 
-.bsp-utility-type-list code {
+.ppspb-utility-type-list code {
 	margin-left: 4px;
 	background: #f0f0f1;
 	padding: 2px 5px;

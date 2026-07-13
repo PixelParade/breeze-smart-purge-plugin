@@ -3,6 +3,8 @@
 *.zip
 smart-purge-for-breeze-cache.zip
 smart-purge-for-breeze-cache-wporg.zip
+pixelparade-smart-purge-for-breeze-cache-wporg.zip
+agent-tools/
 .env
 .env.deploy.local
 .env.mainwp.local

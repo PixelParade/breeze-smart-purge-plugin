@@ -2,3 +2,8 @@
 # Agency (MainWP) builds use .distignore but NOT this file.
 includes/github-updater.php
 includes/agency
+# Plugin directory icons/banners belong in SVN assets/, not inside the plugin zip.
+assets/icon-128x128.png
+assets/icon-256x256.png
+assets/icon-512x512.png
+assets/wporg

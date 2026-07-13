@@ -10,16 +10,16 @@ require_once dirname(__DIR__) . '/includes/scanner-detection.php';
 class ScannerDetectionTest extends TestCase {
 
 	public function test_normalize_builder_meta_handles_strings_and_arrays() {
-		$this->assertSame('', bsp_normalize_builder_meta(''));
-		$this->assertSame('{"post_type":"project"}', bsp_normalize_builder_meta(array('post_type' => 'project')));
-		$this->assertSame('plain', bsp_normalize_builder_meta('plain'));
+		$this->assertSame('', ppspb_normalize_builder_meta(''));
+		$this->assertSame('{"post_type":"project"}', ppspb_normalize_builder_meta(array('post_type' => 'project')));
+		$this->assertSame('plain', ppspb_normalize_builder_meta('plain'));
 	}
 
 	public function test_detects_gutenberg_query_block_reference() {
-		$content = '<!-- wp:query {"query":{"postType":"bsp_test_project"}} /-->';
-		$found   = bsp_detect_post_type_hub_builders(
+		$content = '<!-- wp:query {"query":{"postType":"ppspb_test_project"}} /-->';
+		$found   = ppspb_detect_post_type_hub_builders(
 			array(
-				'post_type' => 'bsp_test_project',
+				'post_type' => 'ppspb_test_project',
 				'content'   => $content,
 			)
 		);
@@ -28,7 +28,7 @@ class ScannerDetectionTest extends TestCase {
 	}
 
 	public function test_detects_elementor_explicit_post_type() {
-		$found = bsp_detect_post_type_hub_builders(
+		$found = ppspb_detect_post_type_hub_builders(
 			array(
 				'post_type' => 'portfolio',
 				'elementor' => '{"settings":{"post_type":"portfolio"}}',
@@ -39,7 +39,7 @@ class ScannerDetectionTest extends TestCase {
 	}
 
 	public function test_detects_elementor_implicit_posts_widget() {
-		$found = bsp_detect_post_type_hub_builders(
+		$found = ppspb_detect_post_type_hub_builders(
 			array(
 				'post_type' => 'post',
 				'elementor' => '{"widgetType":"posts-grid"}',
@@ -50,7 +50,7 @@ class ScannerDetectionTest extends TestCase {
 	}
 
 	public function test_detects_bricks_query_loop() {
-		$found = bsp_detect_post_type_hub_builders(
+		$found = ppspb_detect_post_type_hub_builders(
 			array(
 				'post_type' => 'event',
 				'bricks'    => '{"query":{"post_type":"event"}}',
@@ -61,10 +61,10 @@ class ScannerDetectionTest extends TestCase {
 	}
 
 	public function test_detects_beaver_builder_post_type_string() {
-		$found = bsp_detect_post_type_hub_builders(
+		$found = ppspb_detect_post_type_hub_builders(
 			array(
-				'post_type' => 'bsp_test_project',
-				'beaver'    => '{"settings":{"type":"posts","post_type":"bsp_test_project"}}',
+				'post_type' => 'ppspb_test_project',
+				'beaver'    => '{"settings":{"type":"posts","post_type":"ppspb_test_project"}}',
 			)
 		);
 
@@ -72,7 +72,7 @@ class ScannerDetectionTest extends TestCase {
 	}
 
 	public function test_detects_oxygen_json_reference() {
-		$found = bsp_detect_post_type_hub_builders(
+		$found = ppspb_detect_post_type_hub_builders(
 			array(
 				'post_type' => 'team',
 				'oxygen'    => '{"query":{"postType":"team"}}',
@@ -83,10 +83,10 @@ class ScannerDetectionTest extends TestCase {
 	}
 
 	public function test_detects_wpbakery_shortcode_grid() {
-		$found = bsp_detect_post_type_hub_builders(
+		$found = ppspb_detect_post_type_hub_builders(
 			array(
-				'post_type' => 'bsp_test_project',
-				'content'   => '[vc_basic_grid post_type="bsp_test_project" max_items="6"]',
+				'post_type' => 'ppspb_test_project',
+				'content'   => '[vc_basic_grid post_type="ppspb_test_project" max_items="6"]',
 			)
 		);
 
@@ -95,10 +95,10 @@ class ScannerDetectionTest extends TestCase {
 	}
 
 	public function test_detects_divi_shortcode_grid() {
-		$found = bsp_detect_post_type_hub_builders(
+		$found = ppspb_detect_post_type_hub_builders(
 			array(
-				'post_type' => 'bsp_test_project',
-				'content'   => '[et_pb_blog post_type="bsp_test_project" posts_number="6"]',
+				'post_type' => 'ppspb_test_project',
+				'content'   => '[et_pb_blog post_type="ppspb_test_project" posts_number="6"]',
 			)
 		);
 
@@ -107,7 +107,7 @@ class ScannerDetectionTest extends TestCase {
 	}
 
 	public function test_returns_empty_when_no_match() {
-		$found = bsp_detect_post_type_hub_builders(
+		$found = ppspb_detect_post_type_hub_builders(
 			array(
 				'post_type' => 'orphan_cpt',
 				'content'   => '<p>Hello world</p>',

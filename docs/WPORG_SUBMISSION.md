@@ -15,8 +15,9 @@ Use this for the **public** [wordpress.org plugin directory](https://wordpress.o
 | Concept | Value |
 |---------|--------|
 | **Display name** | Smart Purge for Breeze Cache (`Plugin Name` header) |
-| **Text domain** | `smart-purge-for-breeze-cache` |
-| **Folder / main file** | `smart-purge-for-breeze-cache/` + `smart-purge-for-breeze-cache.php` |
+| **Text domain** | `pixelparade-smart-purge-for-breeze-cache` (wporg zip); agency source keeps `smart-purge-for-breeze-cache` until transform |
+| **Folder / main file** | Wporg: `pixelparade-smart-purge-for-breeze-cache/`; Agency: `smart-purge-for-breeze-cache/` |
+| **Prefix** | `ppspb_` / `PPSPB_*` |
 | **wordpress.org SVN folder** | Whatever slug WordPress approves — zip root folder **must match** |
 
 If the approved slug differs from `smart-purge-for-breeze-cache`, rename the folder and main PHP file to match before the first SVN commit.
@@ -93,8 +94,8 @@ Prepared in **`assets/wporg/`** in this repo (upload to SVN `assets/` only):
 
 | Lane | Build | Zip / deploy | Updates |
 |------|-------|--------------|---------|
-| **wordpress.org** | `.distignore` + `.distignore.wporg` | `smart-purge-for-breeze-cache-wporg.zip` → SVN `trunk` / `tags/` | Directory only |
-| **MainWP clients** | `.distignore` only (agency) | `smart-purge-for-breeze-cache.zip` on GitHub Releases | `BSP_GITHUB_TOKEN` → `/releases/latest` |
+| **wordpress.org** | `.distignore` + `.distignore.wporg` | `pixelparade-smart-purge-for-breeze-cache-wporg.zip` → SVN `trunk` / `tags/` | Directory only |
+| **MainWP clients** | `.distignore` only (agency) | `smart-purge-for-breeze-cache.zip` on GitHub Releases | `PPSPB_GITHUB_TOKEN` (legacy `BSP_GITHUB_TOKEN` still works) → `/releases/latest` |
 
 Agency build includes `includes/github-updater.php` and `includes/agency/`. The wporg build omits both (see `.distignore.wporg`).
 

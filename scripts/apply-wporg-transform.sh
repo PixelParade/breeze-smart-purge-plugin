@@ -19,12 +19,12 @@ fi
 mv "${SRC_DIR}" "${DEST_DIR}"
 mv "${DEST_DIR}/${AGENCY_SLUG}.php" "${DEST_DIR}/${WPORG_SLUG}.php"
 
-find "${DEST_DIR}" -type f \( -name '*.php' -o -name 'readme.txt' \) -print0 | while IFS= read -r -d '' file; do
+find "${DEST_DIR}" -type f \( -name '*.php' -o -name 'readme.txt' -o -name '*.js' \) -print0 | while IFS= read -r -d '' file; do
 	sed -i "s/${AGENCY_SLUG}/${WPORG_SLUG}/g" "${file}"
 done
 
 sed -i "s/^ \* Version: .*/ * Version: ${WPORG_VERSION}/" "${DEST_DIR}/${WPORG_SLUG}.php"
-sed -i "s/define('BSP_VERSION', '[^']*')/define('BSP_VERSION', '${WPORG_VERSION}')/" "${DEST_DIR}/${WPORG_SLUG}.php"
+sed -i "s/define('PPSPB_VERSION', '[^']*')/define('PPSPB_VERSION', '${WPORG_VERSION}')/" "${DEST_DIR}/${WPORG_SLUG}.php"
 
 if [[ -f "${REPO_ROOT}/readme.wporg.txt" ]]; then
 	cp "${REPO_ROOT}/readme.wporg.txt" "${DEST_DIR}/readme.txt"

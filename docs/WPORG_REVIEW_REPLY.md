@@ -1,49 +1,51 @@
 # WordPress.org review reply (Jul 2026)
 
-Use after uploading the corrected build from `smart-purge-for-breeze-cache-wporg.zip` (built via `scripts/build-plugin-zips.sh`).
+**Review ID:** R pixelparade-smart-purge-for-breeze-cache/kevpress88/3Jul26/T2 9Jul26/4.0.1
 
-## Slug reservation (required in reply)
-
-Please reserve slug **`pixelparade-smart-purge-for-breeze-cache`**.
-
-Display name: **PixelParade Smart Purge for Breeze Cache**
-
-This is an unofficial add-on for [Breeze Cache](https://wordpress.org/plugins/breeze/). PixelParade LLC is not affiliated with Cloudways or Breeze.
+Upload the corrected package: **`pixelparade-smart-purge-for-breeze-cache-wporg.zip`** (built via `scripts/build-plugin-zips.ps1` or `.sh`). Do **not** SVN until the team confirms approval.
 
 ## Draft email reply
 
 > Hi,
 >
-> I uploaded a corrected build. Please reserve slug **pixelparade-smart-purge-for-breeze-cache**.
+> Thank you for the review. I have uploaded a corrected build addressing all three items.
 >
-> PixelParade Smart Purge for Breeze Cache is an unofficial Breeze add-on; we are not affiliated with Cloudways/Breeze.
+> **1. Directory assets in the plugin zip**  
+> `assets/icon-128x128.png` and `assets/icon-256x256.png` (and the rest of `assets/wporg/`) are excluded from the wordpress.org plugin zip. Those files remain in our repo for MainWP/agency builds and for later upload to the SVN `assets/` folder only.
 >
-> Thanks,
+> **2. Text domain matches slug**  
+> The package folder, main PHP file, plugin header `Text Domain:`, and all translation calls now use **`pixelparade-smart-purge-for-breeze-cache`**.
+>
+> **3. Unique prefix (4+ characters)**  
+> All plugin functions, hooks, AJAX actions, options, transients, and script handles now use the **`ppspb_`** prefix (PixelParade Smart Purge for Breeze). Constants use **`PPSPB_*`**. The previous short `bsp_` prefix is no longer used for new code.
+>
+> **Note on `breeze_token_name`:**  
+> We intentionally keep `wp_localize_script( 'breeze-backend', 'breeze_token_name', … )` when enabling Breeze’s frontend admin-bar toolbar. That object name is required by Breeze’s own `breeze-main.js`. Renaming it would break the toolbar. Our wrapper script handle is `ppspb-ajaxurl`; only the Breeze-expected localize object name is unchanged for compatibility.
+>
+> Please reserve / continue with slug **`pixelparade-smart-purge-for-breeze-cache`**. Display name: **PixelParade Smart Purge for Breeze Cache** (unofficial Breeze add-on; PixelParade LLC is not affiliated with Cloudways or Breeze).
+>
+> Thanks,  
 > Kevin
 
-## Issues addressed in the build
+## Issues addressed in this build
 
 | Review item | Fix |
 |-------------|-----|
-| Trademark / generic name | Display name prefixed with **PixelParade**; wporg zip uses new slug |
-| readme encoding | ASCII only (`-` and `>` instead of em dash / arrow) |
-| Inline `<script>` / `<style>` | Moved to `assets/admin/settings.js` + `settings.css`; enqueued via `admin_enqueue_scripts` |
-| Frontend `ajaxurl` echo | `wp_register_script` + `wp_add_inline_script` |
-| `Breeze_Admin` reflection | Replaced with `bsp_register_breeze_frontend_admin_bar()` mirroring Breeze toolbar nodes |
-| Prefixes | Existing `bsp_` prefix retained |
+| Icons shipped inside plugin zip | Excluded via `.distignore.wporg` (`assets/icon-*.png`, `assets/wporg/`) |
+| Text domain ≠ slug | Wporg transform sets slug + textdomain to `pixelparade-smart-purge-for-breeze-cache` |
+| Prefix too short (`bsp`) | Source migrated to `ppspb_` / `PPSPB_*` with one-time `bsp_*` → `ppspb_*` option migration for MainWP clients |
+| `breeze_token_name` localize | Kept intentionally for Breeze JS compatibility (documented above) |
 
 ## Upload steps
 
-1. `powershell -ExecutionPolicy Bypass -File scripts/build-plugin-zips.ps1` (or `bash scripts/build-plugin-zips.sh`)
-2. **Upload now:** `smart-purge-for-breeze-cache-wporg.zip` (matches pending submission slug; passes automated Plugin Check)
-3. **After slug approved:** use `pixelparade-smart-purge-for-breeze-cache-wporg.zip` for SVN
-4. Log in as **kevpress88** → [Add your plugin](https://wordpress.org/plugins/developers/add/) → upload zip
-5. Reply to the review email (do **not** SVN until approved)
-
-## Plugin Check note
-
-Text domains in `__()` / `esc_html__()` must be **string literals** (not `BSP_TEXT_DOMAIN` constants). The wporg upload zip uses `'smart-purge-for-breeze-cache'` until the new slug is allocated.
+1. Build: `powershell -ExecutionPolicy Bypass -File scripts/build-plugin-zips.ps1`  
+   (or `bash scripts/build-plugin-zips.sh`)
+2. Upload: **`pixelparade-smart-purge-for-breeze-cache-wporg.zip`**
+3. Reply with the email draft above (as **kevpress88**)
+4. Do **not** commit to SVN until approved
 
 ## Agency / MainWP lane
 
-GitHub Releases and MainWP keep slug **`smart-purge-for-breeze-cache`** unchanged. Only the wporg zip is transformed at build time.
+- Agency zip folder slug stays **`smart-purge-for-breeze-cache`** (existing clients).
+- Same `ppspb_` code; settings migrate automatically from `bsp_*` options on upgrade.
+- `BSP_GITHUB_TOKEN` in wp-config still works; prefer `PPSPB_GITHUB_TOKEN` for new installs.

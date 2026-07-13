@@ -10,16 +10,16 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-if (defined('BSP_AGENCY_BUILD')) {
+if (defined('PPSPB_AGENCY_BUILD')) {
 	return;
 }
-define('BSP_AGENCY_BUILD', true);
+define('PPSPB_AGENCY_BUILD', true);
 
 require_once __DIR__ . '/github-token.php';
 
-// Define BSP_GITHUB_TOKEN from env or encrypted option before github-updater.php loads.
-bsp_agency_bootstrap_github_credentials();
+// Define PPSPB_GITHUB_TOKEN from env or encrypted option before github-updater.php loads.
+ppspb_agency_bootstrap_github_credentials();
 
-if (!defined('BSP_GITHUB_REPO')) {
-	define('BSP_GITHUB_REPO', 'PixelParade/breeze-smart-purge-plugin');
+if (!defined('PPSPB_GITHUB_REPO')) {
+	define('PPSPB_GITHUB_REPO', 'PixelParade/breeze-smart-purge-plugin');
 }
