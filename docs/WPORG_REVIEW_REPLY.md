@@ -17,10 +17,14 @@ Upload the corrected package: **`pixelparade-smart-purge-for-breeze-cache-wporg.
 > The package folder, main PHP file, plugin header `Text Domain:`, and all translation calls now use **`pixelparade-smart-purge-for-breeze-cache`**.
 >
 > **3. Unique prefix (4+ characters)**  
-> All plugin functions, hooks, AJAX actions, options, transients, and script handles now use the **`ppspb_`** prefix (PixelParade Smart Purge for Breeze). Constants use **`PPSPB_*`**. The previous short `bsp_` prefix is no longer used for new code.
+> All plugin functions, hooks, AJAX actions, active options, transients, and script handles now use the **`ppspb_`** prefix (PixelParade Smart Purge for Breeze). Constants use **`PPSPB_*`**. There are no `function bsp_*`, `wp_ajax_bsp_*`, or `define( 'BSP_*' )` symbols in the package.
+>
+> A small set of string literals still mention legacy `bsp_*` option/transient names only inside a one-time migration helper and uninstall cleanup (copy-then-delete old keys). Those are not active API prefixes.
 >
 > **Note on `breeze_token_name`:**  
 > We intentionally keep `wp_localize_script( 'breeze-backend', 'breeze_token_name', … )` when enabling Breeze’s frontend admin-bar toolbar. That object name is required by Breeze’s own `breeze-main.js`. Renaming it would break the toolbar. Our wrapper script handle is `ppspb-ajaxurl`; only the Breeze-expected localize object name is unchanged for compatibility.
+>
+> The wordpress.org zip also omits `includes/github-updater.php` and `includes/agency/` (no `BSP_GITHUB_TOKEN` updater path in this package).
 >
 > Please reserve / continue with slug **`pixelparade-smart-purge-for-breeze-cache`**. Display name: **PixelParade Smart Purge for Breeze Cache** (unofficial Breeze add-on; PixelParade LLC is not affiliated with Cloudways or Breeze).
 >
@@ -33,8 +37,9 @@ Upload the corrected package: **`pixelparade-smart-purge-for-breeze-cache-wporg.
 |-------------|-----|
 | Icons shipped inside plugin zip | Excluded via `.distignore.wporg` (`assets/icon-*.png`, `assets/wporg/`) |
 | Text domain ≠ slug | Wporg transform sets slug + textdomain to `pixelparade-smart-purge-for-breeze-cache` |
-| Prefix too short (`bsp`) | Source migrated to `ppspb_` / `PPSPB_*` with one-time `bsp_*` → `ppspb_*` option migration for MainWP clients |
+| Prefix too short (`bsp`) | Active API uses `ppspb_` / `PPSPB_*`; legacy `bsp_*` option name strings only in migration/uninstall |
 | `breeze_token_name` localize | Kept intentionally for Breeze JS compatibility (documented above) |
+| Agency updater / GitHub token | Excluded from wporg zip via `.distignore.wporg` |
 
 ## Upload steps
 
