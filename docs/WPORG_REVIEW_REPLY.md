@@ -8,30 +8,18 @@ Upload the corrected package: **`pixelparade-smart-purge-for-breeze-cache-wporg.
 
 > Hi,
 >
-> Thank you for the review. I have uploaded a corrected build addressing all three items.
+> Thank you for the review. I have uploaded a corrected build.
 >
-> **1. Directory assets in the plugin zip**  
-> `assets/icon-128x128.png` and `assets/icon-256x256.png` (and the rest of `assets/wporg/`) are excluded from the wordpress.org plugin zip. Those files remain in our repo for MainWP/agency builds and for later upload to the SVN `assets/` folder only.
+> A few notes for context:
 >
-> **2. Text domain matches slug**  
-> The package folder, main PHP file, plugin header `Text Domain:`, and all translation calls now use **`pixelparade-smart-purge-for-breeze-cache`**.
->
-> **3. Unique prefix (4+ characters)**  
-> All plugin functions, hooks, AJAX actions, active options, transients, and script handles now use the **`ppspb_`** prefix (PixelParade Smart Purge for Breeze). Constants use **`PPSPB_*`**. There are no `function bsp_*`, `wp_ajax_bsp_*`, or `define( 'BSP_*' )` symbols in the package.
->
-> A small set of string literals still mention legacy `bsp_*` option/transient names only inside a one-time migration helper and uninstall cleanup (copy-then-delete old keys). Those are not active API prefixes.
->
-> **Note on `breeze_token_name`:**  
-> We intentionally keep `wp_localize_script( 'breeze-backend', 'breeze_token_name', … )` when enabling Breeze’s frontend admin-bar toolbar. That object name is required by Breeze’s own `breeze-main.js`. Renaming it would break the toolbar. Our wrapper script handle is `ppspb-ajaxurl`; only the Breeze-expected localize object name is unchanged for compatibility.
->
-> The wordpress.org zip also omits `includes/github-updater.php` and `includes/agency/` (no `BSP_GITHUB_TOKEN` updater path in this package).
->
-> Please reserve / continue with slug **`pixelparade-smart-purge-for-breeze-cache`**. Display name: **PixelParade Smart Purge for Breeze Cache** (unofficial Breeze add-on; PixelParade LLC is not affiliated with Cloudways or Breeze).
+> - Directory icons (`assets/icon-*.png`) are excluded from the plugin zip. Those stay in our repo for later upload to the SVN `assets/` folder only (after approval).
+> - We intentionally keep `wp_localize_script( 'breeze-backend', 'breeze_token_name', … )` when enabling Breeze’s frontend admin-bar toolbar. That object name is required by Breeze’s own `breeze-main.js`; renaming it would break the toolbar. Our own script handle is `ppspb-ajaxurl`; only the Breeze-expected localize object name is unchanged.
+> - Please reserve / continue with slug **`pixelparade-smart-purge-for-breeze-cache`**. Display name: **PixelParade Smart Purge for Breeze Cache** (unofficial Breeze add-on; PixelParade LLC is not affiliated with Cloudways or Breeze).
 >
 > Thanks,  
 > Kevin
 
-## Issues addressed in this build
+## Issues addressed in this build (for us — do not paste into the email)
 
 | Review item | Fix |
 |-------------|-----|
