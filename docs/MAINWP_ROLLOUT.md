@@ -109,21 +109,33 @@ Remove `BSP_GITHUB_TOKEN` only when intentionally moving a site to the wordpress
 
 WordPress does not silently install plugin updates unless auto-updates are enabled for that plugin.
 
-## Standard path — routine agency updates (default after fleet is seeded)
+## Agency release checklist (mandatory gate)
 
-Sites that already have the agency plugin **already include the GitHub updater**. For every new agency version:
+Sites that already have the agency plugin **already include the GitHub updater**. For every agency version bump, **do not commit/push the release or tag `v*` until both smokes pass**:
 
-1. **Develop** on `main` → verify on staging (`breeze-smart-purge.pixelparade.dev`).
-2. **Bump** `Version:` in `smart-purge-for-breeze-cache.php` and `Stable tag:` in `readme.txt`.
-3. **Tag** and push (CI builds zips; or attach `smart-purge-for-breeze-cache.zip` to the GitHub Release):
-   ```powershell
-   git tag v1.1.17
-   git push origin v1.1.17
-   ```
-4. **Confirm** the release has asset **`smart-purge-for-breeze-cache.zip`** (agency). That is what `/releases/latest` serves.
-5. On child sites: WordPress **Dashboard → Plugins → Update** (or MainWP **Updates** for that plugin only). Optional: `BSP_GITHUB_TOKEN` / `PPSPB_GITHUB_TOKEN` for rate limits — not required on the public repo.
+| Step | Action | Pass criteria |
+|------|--------|---------------|
+| 1 | **Smoke staging** (`breeze-smart-purge.pixelparade.dev`) | Candidate on staging (SCP/Novamira or CI); version header matches; Settings → Smart Purge loads; `settings.js`/`settings.css` **200** (or WP-CLI scan/save); no PHP fatal — see [TESTING.md](TESTING.md) § Agency smoke checklist |
+| 2 | **Smoke pixelparade.co** (MainWP site ID **16**) | MainWP sync / `get_site_plugins` (or browser/SSO): plugin active at expected version; Settings OK; exactly **one** folder `smart-purge-for-breeze-cache` |
+| 3 | **Commit + push** to `main` | Only after steps 1–2 pass; CI redeploys staging |
+| 4 | **Tag `v*` + GitHub Release** | Agency zip auto-built; clients get **Plugins → Update** — **no** MainWP zip fleet |
+
+```powershell
+git tag v1.1.17
+git push origin v1.1.17
+```
+
+5. **Confirm** the release has asset **`smart-purge-for-breeze-cache.zip`** (agency). That is what `/releases/latest` serves.
+6. On child sites: WordPress **Dashboard → Plugins → Update** (or MainWP **Updates** for that plugin only). Optional: `BSP_GITHUB_TOKEN` / `PPSPB_GITHUB_TOKEN` for rate limits — not required on the public repo.
+7. Optional post-updater spot-check on pixelparade.co that the **new** version is active.
+
+**Bump** `Version:` in `smart-purge-for-breeze-cache.php` (keep `PPSPB_VERSION` in sync) and `Stable tag:` in `readme.txt` as part of the release commit in step 3.
 
 **Do not** MainWP Upload .zip / Favorites re-install / bulk zip install for routine releases — that was for initial seeding only and risks duplicate folders.
+
+## Standard path — routine agency updates (default after fleet is seeded)
+
+Follow the **Agency release checklist** above for every new agency version. Summary: smoke staging → smoke pixelparade.co → commit/push → tag `v*` + GitHub Release → clients update via the GitHub updater.
 
 ## Initial install only — seed a site that lacks the updater
 

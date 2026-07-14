@@ -52,12 +52,16 @@ Agency-only code: `includes/agency/bootstrap.php` and siblings. See [docs/MAINWP
 - Never commit API keys, SSH keys, application passwords, or `.env` files
 - GitHub Actions secrets: `STAGING_SSH_HOST`, `STAGING_SSH_USER`, `STAGING_SSH_KEY` (preferred) or `STAGING_SSH_PASSWORD`
 
-## Dev workflow
+## Dev workflow (agency / MainWP lane)
 
-1. Edit `smart-purge-for-breeze-cache.php` and `includes/agency/` (agency features)
-2. Push to `main` → GitHub Actions deploys agency tree to staging
-3. Test on staging (WP-CLI + browser)
-4. Tag `v*` → agency zip on GitHub Releases (clients auto-offer update via updater); rebuild wporg zip for wordpress.org upload when ready — **no** MainWP zip re-rollout
+**Mandatory gate before agency commit/push and before tag `v*`:** smoke staging → smoke **pixelparade.co** (MainWP site **16**) → only then commit + push → tag/Release. Details: [docs/MAINWP_ROLLOUT.md](docs/MAINWP_ROLLOUT.md), [docs/TESTING.md](docs/TESTING.md).
+
+1. Edit `smart-purge-for-breeze-cache.php` and `includes/agency/` (agency features); bump `Version:` / `PPSPB_VERSION` / `Stable tag:` when releasing
+2. Put the candidate on staging (SCP/Novamira hotfix for pre-commit smoke, or push to `main` for CI deploy) — **do not** tag yet
+3. **Smoke staging** — version, Settings load, assets 200 / WP-CLI scan-save, no PHP fatal
+4. **Smoke pixelparade.co** — MainWP sync/plugins (site **16**) or browser: active at expected version, Settings OK, no duplicate folders
+5. **Only then** commit + push to `main` (staging CI redeploys)
+6. Tag `v*` → agency zip on GitHub Releases (clients auto-offer update via updater); rebuild wporg zip for wordpress.org when ready — **no** MainWP zip re-rollout
 
 ## Site access
 

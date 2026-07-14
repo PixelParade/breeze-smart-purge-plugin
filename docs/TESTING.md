@@ -1,8 +1,8 @@
 # Testing strategy — Smart Purge for Breeze Cache
 
-Three layers: **automated unit tests** (every push), **staging integration** (primary QA — all builder + purge testing), and **optional** post-rollout smoke on live client sites. MainWP Regression Testing is optional fleet monitoring, not a substitute for the first two.
+Three layers: **automated unit tests** (every push), **staging integration** (primary QA — all builder + purge testing), and a **mandatory** pre-release smoke on **pixelparade.co** (MainWP site ID **16**) before agency commit/push and `v*` tag. MainWP Regression Testing is optional fleet monitoring, not a substitute for PHPUnit + staging.
 
-**pixelparade.co is a live client site**, not the pre-release test environment. Test on staging before every `v*` tag; only spot-check pixelparade.co after rollout if you want production confirmation.
+**pixelparade.co** is a live client site — keep smoke **lightweight** (health + version + no duplicates). Deep feature QA stays on staging. Full agency gate: [MAINWP_ROLLOUT.md](MAINWP_ROLLOUT.md) § Agency release checklist.
 
 ## Layer 1 — PHPUnit (CI, no WordPress)
 
@@ -110,13 +110,40 @@ After mu-plugin + seed:
 3. **Re-scan** after editing a fixture page — map updates; no duplicate or missing hubs.
 4. Without the mu-plugin, seed may succeed in WP-CLI but **Run Smart Scan in wp-admin will not detect CPT hubs** because `bsp_test_project` is not registered on web requests.
 
-### Manual staging checklist (before tagging `v*`)
+### Manual staging checklist (deeper QA — fixtures)
+
+Use when changing scanner/purge behavior (in addition to the lightweight agency smoke below):
 
 1. **Settings → Smart Purge** — confirm scanned map lists all `bsp-test-*-hub` paths for `bsp_test_project` (Gutenberg, Bricks, Elementor, Beaver, Oxygen, WPBakery, Divi).
 2. Edit a `bsp_test_project` post → save → confirm Breeze purges hub URLs (Breeze debug log or cache headers).
 3. **Admin bar** — frontend toolbar purge links work when logged in as editor/admin.
 4. **Plugin Check** — CI already runs wp.org tree; spot-check staging with Plugin Check if you changed admin UI.
 5. **GitHub updater** — after repo is public, Dashboard → Plugins shows update from Releases **without** `BSP_GITHUB_TOKEN`.
+
+### Agency smoke checklist (mandatory before commit/push and `v*` tag)
+
+Agents **must** run both smokes before an agency release commit/push and before tagging. Do not tag if either fails.
+
+#### Staging (`breeze-smart-purge.pixelparade.dev`)
+
+| Check | How |
+|-------|-----|
+| Version matches candidate | `wp plugin list` / `Version:` in deployed `smart-purge-for-breeze-cache.php` |
+| Settings load | Settings → Smart Purge (or WP-CLI/options read) — no critical error |
+| Admin assets | Network: `settings.js` and `settings.css` **200** (plugin dir mode **755**) |
+| Scan / save (optional but preferred) | Run Smart Scan or WP-CLI simulate; settings save succeeds |
+| No PHP fatal | Homepage + wp-admin load; `debug.log` clear of new fatals |
+
+#### pixelparade.co (MainWP site ID **16**)
+
+| Check | How |
+|-------|-----|
+| Plugin present / active | MainWP sync + `get_site_plugins` (or browser/SSO) |
+| Expected version | Matches the live/expected release under test (post-updater: matches new tag) |
+| Settings OK | Settings → Smart Purge loads when browser access available |
+| No duplicates | Exactly one folder `smart-purge-for-breeze-cache` — no legacy `breeze-smart-purge` or junk `smart-purge-for-breeze-cache-*` |
+
+Then: **commit + push** → **tag `v*`** → GitHub Release (clients update via updater — no MainWP zip fleet).
 
 ### Staging fixture URLs (live on `breeze-smart-purge.pixelparade.dev`)
 
@@ -132,30 +159,32 @@ After mu-plugin + seed:
 
 Persistent CPT registration: mu-plugin `wp-content/mu-plugins/bsp-staging-test-cpt.php` (source in `scripts/staging/`).
 
-## Optional — live site smoke (after rollout, not before tag)
+## Live site smoke (pixelparade.co — mandatory for agency releases)
 
-**pixelparade.co** (and other client sites) are for confirming a **production install** looks healthy — not for feature QA before release.
+**pixelparade.co** (MainWP site **16**) is a **required** smoke target in the agency release gate (with staging). It is **not** a substitute for staging fixture/builder QA.
 
-After a fleet or single-site update, a quick check is enough:
+**Before** agency commit/push and `v*` tag: run the **Agency smoke checklist** above.
+
+**After** clients update via GitHub Releases (optional deeper spot-check):
 
 1. No duplicate-folder admin notice
 2. **Settings → Smart Purge** loads; scanned map looks sane
 3. One edit → save → hub cache clears
 
-Do **not** use pixelparade.co as a substitute for the staging checklist before tagging.
-
-## Release gate (before `v*` tag)
+## Release gate (before agency commit/push and `v*` tag)
 
 | Step | Command / action |
 |------|------------------|
 | Unit tests | `composer test` (or wait for CI green) |
 | Plugin Check | CI `plugin-check` job |
-| Zip smoke | CI `build-zips` job |
+| Zip smoke | CI `build-zips` job (on push/tag) |
 | Staging mu-plugin (one-time) | `.\scripts\install-staging-test-mu-plugin.ps1` |
-| Staging fixtures | `wp eval-file …/seed-staging-test-fixtures.php` |
-| Staging manual | Checklist above (required before every `v*` tag) |
-| Tag + release | `git tag vX.Y.Z && git push origin vX.Y.Z` | CI verifies zips |
-| Live smoke (optional) | pixelparade.co or one client site after update | Not a pre-tag gate |
+| Staging fixtures | `wp eval-file …/seed-staging-test-fixtures.php` (when changing scanner/purge) |
+| **Smoke staging** | Agency smoke checklist — **required** |
+| **Smoke pixelparade.co** | Agency smoke checklist (site **16**) — **required** |
+| Commit + push | Only after both smokes pass |
+| Tag + release | `git tag vX.Y.Z && git push origin vX.Y.Z` — CI verifies zips |
+| Post-updater spot-check | pixelparade.co at new version (optional deeper) |
 | Fleet audit (after slug migration) | `wp plugin list` + `ls wp-content/plugins/` on sample sites | Exactly one `smart-purge-for-breeze-cache` folder |
 
 ## MainWP Regression Testing — worth it?

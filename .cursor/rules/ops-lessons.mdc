@@ -13,6 +13,25 @@ alwaysApply: true
 - **MainWP clients:** agency build only — never wordpress.org install for this plugin. Optional `BSP_GITHUB_TOKEN` / `PPSPB_GITHUB_TOKEN` for rate limits.
 - **After initial fleet:** do **not** MainWP Upload .zip / bulk zip install for agency updates — seed once with a zip that includes the updater, then only tag `v*` + GitHub Release; clients update via Plugins → Update.
 
+## Mandatory agency release gate (do not skip)
+
+Before **commit + push** of an agency plugin bump, and before **tag `v*` / GitHub Release** (clients auto-update via the GitHub updater):
+
+1. **Smoke staging** (`breeze-smart-purge.pixelparade.dev`) — must pass.
+2. **Smoke pixelparade.co** (MainWP site ID **16**) — must pass.
+3. **Only then** commit + push to `main`, then tag `v*` + GitHub Release.
+
+Do **not** tag or announce a release if either smoke fails. Full checklist: `docs/MAINWP_ROLLOUT.md` § Agency release checklist; smoke items: `docs/TESTING.md` § Agency smoke checklist.
+
+**How staging gets the candidate before commit:** prefer SCP/Novamira hotfix of the changed files for a pre-commit smoke (then commit so the next CI run does not overwrite uncommitted fixes). Pushing WIP to `main` for CI deploy is fine for iteration, but the **version-bump commit, push of that bump, and `v*` tag** wait until both smokes pass.
+
+**Agency smoke (lightweight):**
+
+| Target | Must confirm |
+|--------|----------------|
+| Staging | Deployed `Version:` matches candidate; Settings → Smart Purge loads; `settings.js` / `settings.css` **200** (or WP-CLI simulate scan/save); homepage + wp-admin — no PHP fatal |
+| pixelparade.co | MainWP sync / `get_site_plugins` (site **16**) or browser/SSO: plugin **active** at expected version; Settings loads; **one** folder `smart-purge-for-breeze-cache` (no duplicates/junk) |
+
 ## Staging verification (pre-approved for agents)
 
 Read-only checks on `breeze-smart-purge.pixelparade.dev` (WP-CLI, Novamira, Cloudways cache purge, browser snapshot) are auto-allowed — see `docs/ACCESS.md`. Never echo passwords or API keys in output.
@@ -58,8 +77,8 @@ Emergency hotfix: SCP to `public_html/wp-content/plugins/smart-purge-for-breeze-
 
 ## Staging deploy
 
-- **Efficient staging test (default):** `git commit` → `git push origin main` → **Deploy to Staging** CI only (`breeze-smart-purge.pixelparade.dev`). Does **not** update MainWP clients (those need tag `v*` + GitHub Release for the updater). Faster and more reliable than Novamira hotfix for `smart-purge-for-breeze-cache.php` (large file gets chunked and stalls).
-- **Novamira hotfix:** only for tiny pre-commit tweaks (`assets/admin/settings.js`, `.css`). Always follow with commit + push or the next CI run overwrites.
+- **Efficient staging test:** get the candidate onto staging (SCP/Novamira for pre-commit smoke, or `git push origin main` → **Deploy to Staging** CI). Does **not** update MainWP clients (those need tag `v*` + GitHub Release for the updater). For agency **version bumps**, both smokes must pass before the release commit/push/tag — see **Mandatory agency release gate** above.
+- **Novamira hotfix:** only for tiny pre-commit tweaks (`assets/admin/settings.js`, `.css`). Always follow with commit + push after smokes or the next CI run overwrites. Large-file PHP via Novamira often chunks/stalls — prefer CI or SCP for `smart-purge-for-breeze-cache.php`.
 - On Windows PowerShell, `curl` is `Invoke-WebRequest` (no timeout) — use `curl.exe -s -m 30` for HTTP fetches or agents hang on slow endpoints.
 - **After SCP/CI deploy:** plugin root must be mode **755** (not 744) or Apache/`www-data` cannot traverse `wp-content/plugins/smart-purge-for-breeze-cache/` — `settings.css` / `settings.js` return **403** (*Server unable to read htaccess file*). Staging workflow runs `chmod 755` post-deploy; manual hotfix: `chmod 755` on plugin root or Cloudways **Reset permissions** → sys_user.
 - Application SSH user cannot write `/tmp`; SCP directly to plugin path.
