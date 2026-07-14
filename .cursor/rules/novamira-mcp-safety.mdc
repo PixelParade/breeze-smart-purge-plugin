@@ -22,4 +22,4 @@ alwaysApply: true
 
 Re-run hostname check before: write-file, edit-file, delete-file, delete-post, execute-php, or mutating run-wp-cli.
 
-This is a **staging** site — production deploys go through GitHub releases + MainWP only.
+This is a **staging** site — production agency updates go through GitHub Releases + the client GitHub updater only (not MainWP zip re-install).

@@ -1,5 +1,7 @@
 # GitHub setup
 
+**Auth (local machine):** [`wpcp-debug/docs/GITHUB_AUTH.md`](../../wpcp-debug/docs/GITHUB_AUTH.md) — `gh auth login` only. No Cursor MCP PAT or `GITHUB_PERSONAL_ACCESS_TOKEN` env var.
+
 **Canonical repo:** [PixelParade/breeze-smart-purge-plugin](https://github.com/PixelParade/breeze-smart-purge-plugin) (**public** — agency zip updates work without `BSP_GITHUB_TOKEN`)
 
 **Legacy personal repo:** [Kevin-LeMasters-PixelParade/Breeze-Smart-Purge](https://github.com/Kevin-LeMasters-PixelParade/Breeze-Smart-Purge) — archive after consolidation.
@@ -11,12 +13,12 @@ Local folder: `C:\Users\kevin\Projects\breeze-smart-purge-plugin`
 | Lane | Audience | Trigger | Artifact | Where |
 |------|----------|---------|----------|--------|
 | **Staging dev** | Developers | Push to `main` | Agency file tree (SSH) | `breeze-smart-purge.pixelparade.dev` only |
-| **Agency release** | MainWP client sites | Tag `v*` | `smart-purge-for-breeze-cache.zip` | GitHub Releases + MainWP / WP Updates |
+| **Agency release** | MainWP client sites | Tag `v*` | `smart-purge-for-breeze-cache.zip` | GitHub Releases → child **GitHub updater** (Plugins → Update). MainWP Upload .zip = **initial seed only** |
 | **wordpress.org** | External (non-clients) | Manual SVN | `smart-purge-for-breeze-cache-wporg.zip` | Plugin directory |
 
 **MainWP clients** get early/special features (`includes/agency/`) and the GitHub updater. **wp.org users** get the public subset only. See [MAINWP_ROLLOUT.md](MAINWP_ROLLOUT.md) for per-site rules and rollout steps.
 
-Staging tracks `main` automatically — **not** the same as client updates. Clients only change when you **tag a release** and **run an update** (MainWP or wp-admin).
+Staging tracks `main` automatically — **not** the same as client updates. Clients only change when you **tag a release**; the agency **GitHub updater** then offers it under Plugins → Update (MainWP Upload .zip is **initial seed only**).
 
 ### Build excludes
 
@@ -39,6 +41,8 @@ git fetch --all
 
 ## Connection status (check anytime)
 
+See [`wpcp-debug/docs/GITHUB_AUTH.md`](../../wpcp-debug/docs/GITHUB_AUTH.md) for full auth reference. Quick check:
+
 ```powershell
 gh auth status
 gh api user/orgs -q ".[].login"                    # expect: PixelParade
@@ -46,26 +50,7 @@ gh repo view PixelParade/breeze-smart-purge-plugin # expect: repo metadata
 gh secret list -R PixelParade/breeze-smart-purge-plugin
 ```
 
-If org commands return **404** or empty orgs, your PAT is not authorized for **PixelParade**. Fix:
-
-1. [Fine-grained tokens](https://github.com/settings/tokens?type=beta) → edit token
-2. **Resource owner:** `PixelParade` (or authorize org on user-owned token)
-3. **Repository access:** `breeze-smart-purge-plugin` or all org repos
-4. **Permissions:** Contents, Metadata, Actions, Administration (for invites/secrets)
-5. [Org approve](https://github.com/organizations/PixelParade/settings/personal-access-tokens)
-6. `gh auth login --with-token` → update `GITHUB_PERSONAL_ACCESS_TOKEN` → restart your terminal / IDE session
-
-`git push` may work before `gh`/MCP do — they use different credentials until PAT is fixed.
-
-## GitHub CLI
-
-Set Windows user env var `GITHUB_PERSONAL_ACCESS_TOKEN` with a fine-grained PAT that has **PixelParade** org access. Restart your terminal after updating.
-
-```powershell
-gh auth login --with-token   # paste token, Enter, Ctrl+Z
-gh api user/orgs -q ".[].login"
-gh repo view PixelParade/breeze-smart-purge-plugin
-```
+If org commands fail, run `gh auth refresh -h github.com -s read:org,repo,workflow` (details in GITHUB_AUTH.md).
 
 ## Collaborators
 
@@ -93,7 +78,7 @@ ssh-keygen -t ed25519 -f $env:USERPROFILE\.ssh\breeze-smart-purge-deploy -N '""'
 
 ### 2. GitHub Actions secrets
 
-Run (after PAT has PixelParade org access):
+Run (after `gh auth` has PixelParade org access):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/setup-github-secrets.ps1
@@ -138,10 +123,10 @@ GitHub Actions attaches **both** zips to the release:
 
 | Asset | Use |
 |-------|-----|
-| `smart-purge-for-breeze-cache.zip` | **MainWP clients** — updater downloads this name |
-| `smart-purge-for-breeze-cache-wporg.zip` | **SVN** — upload to wordpress.org when ready |
+| `smart-purge-for-breeze-cache.zip` | **Agency clients** — GitHub updater downloads this name (tag `v*` → Release) |
+| `smart-purge-for-breeze-cache-wporg.zip` / `pixelparade-…-wporg.zip` | **wordpress.org upload** (not agency) |
 
-Full rollout checklist: [MAINWP_ROLLOUT.md](MAINWP_ROLLOUT.md).
+Do **not** re-roll agency versions via MainWP Upload .zip after the fleet has the updater. Full checklist: [MAINWP_ROLLOUT.md](MAINWP_ROLLOUT.md).
 
 ## Make public (when ready)
 

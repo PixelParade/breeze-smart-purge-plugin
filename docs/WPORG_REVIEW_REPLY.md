@@ -42,3 +42,4 @@ Upload the corrected package: **`pixelparade-smart-purge-for-breeze-cache-wporg.
 - Agency zip folder slug stays **`smart-purge-for-breeze-cache`** (existing clients).
 - Same `ppspb_` code; settings migrate automatically from `bsp_*` options on upgrade.
 - `BSP_GITHUB_TOKEN` in wp-config still works; prefer `PPSPB_GITHUB_TOKEN` for new installs.
+- Routine agency updates: tag `v*` + GitHub Release (`smart-purge-for-breeze-cache.zip`) — **not** MainWP Upload .zip (that was initial seed only).

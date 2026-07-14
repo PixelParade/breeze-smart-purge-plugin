@@ -33,7 +33,7 @@ breeze-smart-purge-plugin/
 
 1. Clone the repo and copy `.env.deploy.example` → `.env.deploy.local` (gitignored).
 2. Edit `smart-purge-for-breeze-cache.php` (agency hooks in `includes/agency/`), commit, push to `main` — staging auto-deploys.
-3. Tag `v*` for agency GitHub Release zip + MainWP rollout.
+3. Tag `v*` for agency GitHub Release zip — clients update via the GitHub updater (not MainWP Upload .zip).
 4. Publish wporg zip to SVN when the public subset is ready.
 5. See [docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md), [docs/MAINWP_ROLLOUT.md](docs/MAINWP_ROLLOUT.md), and [docs/WPORG_SUBMISSION.md](docs/WPORG_SUBMISSION.md).
 

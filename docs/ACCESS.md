@@ -106,7 +106,7 @@ Preferred: **SSH key** deploy (see `scripts/setup-github-secrets.ps1`).
 
 Current workflow deploys the **agency** tree (`smart-purge-for-breeze-cache.php`, `readme.txt`, `includes/`, `assets/`) to `public_html/wp-content/plugins/smart-purge-for-breeze-cache/`, then normalizes permissions (`755` dirs / `644` files).
 
-MainWP client rollout: [MAINWP_ROLLOUT.md](MAINWP_ROLLOUT.md).
+MainWP client rollout: [MAINWP_ROLLOUT.md](MAINWP_ROLLOUT.md) — routine updates = GitHub Release + updater; MainWP Upload .zip = **initial seed only**.
 
 ## MainWP REST API (dashboard)
 

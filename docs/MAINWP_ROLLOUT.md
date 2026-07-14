@@ -9,7 +9,7 @@ Canonical repo: [PixelParade/breeze-smart-purge-plugin](https://github.com/Pixel
 | Environment | Site(s) | Code source | Update mechanism |
 |-------------|---------|-------------|------------------|
 | **Staging** | `breeze-smart-purge.pixelparade.dev` | `main` branch (CI SSH deploy) | Automatic on every push to `main` |
-| **MainWP clients** | PixelParade child sites (e.g. `pixelparade.co`) | GitHub Release **agency** zip | Tag `v*` → `smart-purge-for-breeze-cache.zip` → MainWP or WP Updates |
+| **MainWP clients** | PixelParade child sites (e.g. `pixelparade.co`) | GitHub Release **agency** zip | Tag `v*` → agency zip on Releases → **GitHub updater** on each child (`Plugins → Update`) |
 | **External / wp.org** | Not on MainWP | SVN **wporg** zip | Manual SVN from `smart-purge-for-breeze-cache-wporg.zip` |
 
 **GitHub repo is public** — agency zip updates work without `BSP_GITHUB_TOKEN` on client sites. Dual zip builds are unchanged.
@@ -26,7 +26,16 @@ Canonical repo: [PixelParade/breeze-smart-purge-plugin](https://github.com/Pixel
    instant test              MainWP clients             External users
 ```
 
-**Staging does not push to clients.** **Clients do not track `main`.** They only change when you tag a release and run an update.
+**Staging does not push to clients.** **Clients do not track `main`.** They only change when you tag a GitHub Release; each site’s agency **GitHub updater** then offers the new version under **Plugins → Update**.
+
+### Initial install vs routine updates (read this first)
+
+| Phase | When | Method |
+|-------|------|--------|
+| **Initial install only** | Site does **not** yet have `smart-purge-for-breeze-cache` (or needs the agency zip that includes the updater) | MainWP **Upload .zip** / Favorites — once per site |
+| **Routine agency updates** | Site already has the agency build + GitHub updater | Tag `v*` + GitHub Release with `smart-purge-for-breeze-cache.zip` — **do not** re-Upload .zip or bulk-install |
+
+After the fleet has the updater, **never** treat MainWP zip install as the default release path. That was only to seed sites with a build that includes `includes/github-updater.php`.
 
 ## Two builds from one repo
 
@@ -100,101 +109,51 @@ Remove `BSP_GITHUB_TOKEN` only when intentionally moving a site to the wordpress
 
 WordPress does not silently install plugin updates unless auto-updates are enabled for that plugin.
 
-## Rollout workflow (MainWP batch)
+## Standard path — routine agency updates (default after fleet is seeded)
 
-### Easy path — MainWP Favorites + public GitHub release (recommended)
-
-The repo is **public**. Use **MainWP Favorites** with a **direct zip download URL** — not the **Install Plugins → Plugin URL** tab (that field is for wordpress.org plugin pages only).
-
-**One-time setup on the MainWP dashboard** (requires **Favorites extension 5.2+** for external zip URLs):
-
-1. **Tag a verified release first** (CI runs `verify-plugin-zip.sh` on every tag).
-2. **MainWP → Add-ons → Favorites → Add New**
-3. Paste a **direct** agency zip URL:
-
-   **Pinned (safer for first fleet rollout — exact version):**
-   ```
-   https://github.com/PixelParade/breeze-smart-purge-plugin/releases/download/v1.1.3/smart-purge-for-breeze-cache.zip
-   ```
-
-   **Latest (after fleet is healthy — auto-tracks new tags):**
-   ```
-   https://github.com/PixelParade/breeze-smart-purge-plugin/releases/latest/download/smart-purge-for-breeze-cache.zip
-   ```
-
-4. Name it e.g. `Smart Purge for Breeze Cache (agency)` → **Save**.
-5. **Favorites icon (custom plugin):** MainWP cannot fetch icons from wordpress.org for agency builds. Copy `scripts/pp-mainwp-favorites-smart-purge-icon.php` to `wp-content/mu-plugins/` on **mainwp.pixelparade.co**, then open **Favorites** and click **Update Version Info** on the Smart Purge row. Icons are also bundled in the zip at `assets/icon-128x128.png` (v1.1.5+).
-
-   Stable icon URLs (also attached to every GitHub Release since v1.1.6):
-
-   ```
-   https://github.com/PixelParade/breeze-smart-purge-plugin/releases/latest/download/icon-128x128.png
-   ```
-
-**If you get `Extraction failed: Incompatible Archive` on the GitHub URL** (known MainWP Favorites quirk with some external URLs — the zip itself is fine):
-
-1. Confirm **MainWP Favorites extension is 5.2+** (Dashboard → Plugins — update the Favorites add-on).
-2. **Workaround (recommended):** download the zip once, then **Favorites → Add New → upload the `.zip` file directly** (not URL). MainWP stores it under `wp-content/uploads/mainwp/.../favorites/` on the dashboard site.
-3. Or skip Favorites for the first rollout: **Install Plugins → Upload .zip** and select the downloaded file.
-
-Download link to save locally:
-
-```
-https://github.com/PixelParade/breeze-smart-purge-plugin/releases/download/v1.1.3/smart-purge-for-breeze-cache.zip
-```
-
-**Install on child sites:**
-
-1. **MainWP → Plugins → Install Plugins → Install Favorites** (or Favorites tab).
-2. Select the saved favorite.
-3. Select only sites that **do not already** have `smart-purge-for-breeze-cache` (skip sites already migrated).
-4. Check **Activate plugin after installation**.
-5. **Complete Installation** — MainWP installs per site in the background (no 524 timeout).
-
-**Remove the old slug** (same batch of sites):
-
-6. **MainWP → Plugins** → find **Breeze Smart Purge** (`breeze-smart-purge`).
-7. **Deactivate**, then **Delete** on those sites.
-8. **MainWP → Sync**.
-
-No `BSP_GITHUB_TOKEN` required on child sites (public repo). Routine updates use GitHub Releases / Dashboard → Plugins → Update — **not** a second Favorites install.
-
-### Alternate path — Upload .zip from your machine
-
-Use when Favorites URL fetch fails or you need an unreleased build:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/build-plugin-zips.ps1
-bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache.zip
-```
-
-1. **MainWP → Plugins → Install Plugins → Upload .zip**
-2. Choose `smart-purge-for-breeze-cache.zip` from the repo root.
-3. Same site selection, activate, delete old slug, sync as above.
-
-Or add the zip via **Favorites → Add New → direct ZIP upload** (stored under `wp-content/uploads/mainwp/.../favorites/` on the dashboard).
-
-**Legacy backup URL (avoid for Favorites if GitHub works):**  
-`https://pixelparade.co/wp-content/uploads/pp-releases/smart-purge-for-breeze-cache.zip`
-
-### Release + routine updates (after everyone is on the new slug)
+Sites that already have the agency plugin **already include the GitHub updater**. For every new agency version:
 
 1. **Develop** on `main` → verify on staging (`breeze-smart-purge.pixelparade.dev`).
 2. **Bump** `Version:` in `smart-purge-for-breeze-cache.php` and `Stable tag:` in `readme.txt`.
-3. **Tag** and push:
+3. **Tag** and push (CI builds zips; or attach `smart-purge-for-breeze-cache.zip` to the GitHub Release):
    ```powershell
-   git tag v1.0.1
-   git push origin v1.0.1
+   git tag v1.1.17
+   git push origin v1.1.17
    ```
-4. **Confirm** GitHub Release has `smart-purge-for-breeze-cache.zip` (agency).
-5. **MainWP → Updates** bulk update (or per-site **Plugins → Update** where `BSP_GITHUB_TOKEN` is set).
+4. **Confirm** the release has asset **`smart-purge-for-breeze-cache.zip`** (agency). That is what `/releases/latest` serves.
+5. On child sites: WordPress **Dashboard → Plugins → Update** (or MainWP **Updates** for that plugin only). Optional: `BSP_GITHUB_TOKEN` / `PPSPB_GITHUB_TOKEN` for rate limits — not required on the public repo.
+
+**Do not** MainWP Upload .zip / Favorites re-install / bulk zip install for routine releases — that was for initial seeding only and risks duplicate folders.
+
+## Initial install only — seed a site that lacks the updater
+
+Use this **once** when a child site does not yet have `smart-purge-for-breeze-cache` (or lacks the agency zip that ships `includes/github-updater.php`). After that, switch permanently to the standard path above.
+
+### MainWP Favorites or Upload .zip (first install)
+
+The repo is **public**. Prefer **MainWP Favorites** with a **direct zip download URL** — not the **Install Plugins → Plugin URL** tab (that field is for wordpress.org plugin pages only).
+
+**One-time Favorites setup** (requires **Favorites extension 5.2+**):
+
+1. Tag a verified release first (CI runs `verify-plugin-zip.sh` on every tag).
+2. **MainWP → Add-ons → Favorites → Add New**
+3. Paste a **direct** agency zip URL (pinned tag or `.../releases/latest/download/smart-purge-for-breeze-cache.zip`).
+4. Save, then **Install Favorites** only on sites that **do not already** have the plugin.
+5. Activate; deactivate/delete legacy `breeze-smart-purge` if present; MainWP sync.
+
+**If Favorites URL extract fails:** download the zip, then **Favorites → Add New → upload the `.zip`**, or **Install Plugins → Upload .zip** (initial install only).
+
+Icons: bundled at `assets/icon-128x128.png`, or release asset URLs under `/releases/latest/download/icon-*.png`. Optional MU-plugin: `scripts/pp-mainwp-favorites-smart-purge-icon.php` on **mainwp.pixelparade.co**.
+
+**Legacy backup URL (avoid if GitHub works):**  
+`https://pixelparade.co/wp-content/uploads/pp-releases/smart-purge-for-breeze-cache.zip`
 
 ### Advanced / emergency only
 
 - **SFTP** single site: `public_html/wp-content/plugins/smart-purge-for-breeze-cache/`
-- **`scripts/pp-mainwp-agency-rollout.php`** — one-time MU plugin; batch in small groups if ever needed. Remove from `wp-content/mu-plugins/` on the dashboard after use.
+- **`scripts/pp-mainwp-agency-rollout.php`** — historical one-time MU plugin; do **not** use for routine updates. Remove from dashboard `mu-plugins/` if still present.
 
-MainWP MCP can **sync, activate, deactivate, and delete** plugins but **cannot upload zips** — use the dashboard for install.
+MainWP MCP can sync/activate/deactivate/delete plugins but **cannot upload zips** — initial install still uses the dashboard UI once.
 
 ## Fleet rollout safety (learned Jul 2026)
 
@@ -205,12 +164,12 @@ Bulk install to ~33 child sites caused **duplicate plugin folders** when the new
 | Don't | Why |
 |-------|-----|
 | Install new slug without deleting `breeze-smart-purge` | Two plugins, same `bsp_*` options, double hooks |
-| Use MainWP **Plugin URL** on Install Plugins for a `.zip` | Wrong tab — use **Favorites** with direct zip URL or **Upload .zip** |
-| Re-run bulk install on sites already on `smart-purge-for-breeze-cache` | Temp folders / confused state |
-| Fire `pp-mainwp-agency-rollout.php` across 30+ sites in one HTTP hit | Timeouts, partial failure; use MainWP UI |
+| Use MainWP **Plugin URL** on Install Plugins for a `.zip` | Wrong tab — Favorites / Upload .zip only for **initial** install |
+| Re-run bulk zip install on sites that already have the updater | Temp folders / duplicates — use GitHub Release + Plugins → Update |
+| Fire `pp-mainwp-agency-rollout.php` across 30+ sites in one HTTP hit | Timeouts, partial failure; initial install via MainWP UI only |
 | Ship a zip without `scripts/verify-plugin-zip.sh` | Backslash entries → undeletable junk on Linux |
 
-### Always (before fleet push)
+### Always (before an **initial** fleet install only — not for routine tags)
 
 1. **Build + verify zip**
    ```powershell

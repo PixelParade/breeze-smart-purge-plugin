@@ -9,8 +9,9 @@ alwaysApply: true
 
 - **Canonical repo:** `PixelParade/breeze-smart-purge-plugin` at `breeze-smart-purge-plugin/`.
 - **Staging:** `breeze-smart-purge.pixelparade.dev` — verify hostname before remote changes.
-- **Three lanes:** `main` → staging CI (agency tree); tag `v*` → agency zip → MainWP clients; wporg zip → SVN for external users. See `docs/MAINWP_ROLLOUT.md` and `docs/WPORG_SUBMISSION.md`.
-- **MainWP clients:** agency build only — `BSP_GITHUB_TOKEN`, never wordpress.org install for this plugin.
+- **Three lanes:** `main` → staging CI (agency tree); tag `v*` → agency zip on GitHub Releases → client **GitHub updater**; wporg zip → SVN for external users. See `docs/MAINWP_ROLLOUT.md` and `docs/WPORG_SUBMISSION.md`.
+- **MainWP clients:** agency build only — never wordpress.org install for this plugin. Optional `BSP_GITHUB_TOKEN` / `PPSPB_GITHUB_TOKEN` for rate limits.
+- **After initial fleet:** do **not** MainWP Upload .zip / bulk zip install for agency updates — seed once with a zip that includes the updater, then only tag `v*` + GitHub Release; clients update via Plugins → Update.
 
 ## Staging verification (pre-approved for agents)
 
@@ -57,7 +58,7 @@ Emergency hotfix: SCP to `public_html/wp-content/plugins/smart-purge-for-breeze-
 
 ## Staging deploy
 
-- **Efficient staging test (default):** `git commit` → `git push origin main` → **Deploy to Staging** CI only (`breeze-smart-purge.pixelparade.dev`). Does **not** update MainWP clients (those need tag `v*` + release zip). Faster and more reliable than Novamira hotfix for `smart-purge-for-breeze-cache.php` (large file gets chunked and stalls).
+- **Efficient staging test (default):** `git commit` → `git push origin main` → **Deploy to Staging** CI only (`breeze-smart-purge.pixelparade.dev`). Does **not** update MainWP clients (those need tag `v*` + GitHub Release for the updater). Faster and more reliable than Novamira hotfix for `smart-purge-for-breeze-cache.php` (large file gets chunked and stalls).
 - **Novamira hotfix:** only for tiny pre-commit tweaks (`assets/admin/settings.js`, `.css`). Always follow with commit + push or the next CI run overwrites.
 - On Windows PowerShell, `curl` is `Invoke-WebRequest` (no timeout) — use `curl.exe -s -m 30` for HTTP fetches or agents hang on slow endpoints.
 - **After SCP/CI deploy:** plugin root must be mode **755** (not 744) or Apache/`www-data` cannot traverse `wp-content/plugins/smart-purge-for-breeze-cache/` — `settings.css` / `settings.js` return **403** (*Server unable to read htaccess file*). Staging workflow runs `chmod 755` post-deploy; manual hotfix: `chmod 755` on plugin root or Cloudways **Reset permissions** → sys_user.
@@ -108,15 +109,15 @@ Emergency hotfix: SCP to `public_html/wp-content/plugins/smart-purge-for-breeze-
 1. **Slug rename** — Old folder `breeze-smart-purge` + new `smart-purge-for-breeze-cache` installed before old was deleted.
 2. **Install without remove-first** — MainWP bulk zip install added the new slug; deactivate/delete of legacy slug was a separate step that was skipped or partial on some sites.
 3. **Bad zip extract** — Backslash paths created a *third* junk directory beside both real folders.
-4. **HTTP batch script** — `scripts/pp-mainwp-agency-rollout.php` triggered install across many sites in one request; partial failures + retries increased duplicate risk. Prefer MainWP **Upload .zip** UI (background per site).
+4. **HTTP batch script** — `scripts/pp-mainwp-agency-rollout.php` triggered install across many sites in one request; partial failures + retries increased duplicate risk. Prefer MainWP **Upload .zip** UI **only for initial seed** (background per site).
 5. **Re-run install** — Running bulk install on sites that already had the new slug can add temp folders or confuse MainWP state.
 
 **Symptoms:** Two "Smart Purge" / "Breeze Smart Purge" entries in Plugins; duplicate admin notices; hub pages purged twice; junk folder undeletable from wp-admin.
 
-**Prevention (mandatory before any fleet rollout):**
+**Prevention (mandatory before any *initial* fleet zip install):**
 
 1. Build zip: `scripts/build-plugin-zips.ps1` or CI — then `bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache.zip`.
-2. **Never** use MainWP **Plugin URL** with a raw `.zip` link — use **Upload .zip** only.
+2. **Never** use MainWP **Plugin URL** with a raw `.zip` link — initial seed: **Upload .zip** / Favorites only; thereafter: GitHub Release + updater.
 3. **Migrate slug in order:** install new slug → activate → deactivate old slug → delete old slug → MainWP sync. Or skip install on sites that already show `smart-purge-for-breeze-cache`.
 4. Spot-check 2–3 sites: `wp plugin list | grep -E 'smart-purge|breeze-smart'` and list `wp-content/plugins/` for extra folders.
 5. Plugin shows admin error if legacy `breeze-smart-purge` or junk `smart-purge-for-breeze-cache-*` dirs still exist.
@@ -134,4 +135,4 @@ Full checklist: `docs/MAINWP_ROLLOUT.md` § Fleet rollout safety.
 
 ## When to update this file
 
-After deploy incidents or auth changes — one bullet here. Cloudways MCP/API detail: `wpcp-debug/docs/CLOUDWAYS-MCP.md`. Paths: `docs/ACCESS.md`.
+After deploy incidents or auth changes — one bullet here. Cloudways MCP/API detail: `wpcp-debug/docs/CLOUDWAYS-MCP.md`. GitHub auth: `wpcp-debug/docs/GITHUB_AUTH.md`. Paths: `docs/ACCESS.md`.

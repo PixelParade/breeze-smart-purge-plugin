@@ -44,7 +44,7 @@ Agency-only code: `includes/agency/bootstrap.php` and siblings. See [docs/MAINWP
 ## Environments
 
 - **Staging:** `breeze-smart-purge.pixelparade.dev` — agency tree from `main`; see [docs/ACCESS.md](docs/ACCESS.md)
-- **MainWP clients:** agency GitHub Release zip — [docs/MAINWP_ROLLOUT.md](docs/MAINWP_ROLLOUT.md)
+- **MainWP clients:** agency GitHub Release + built-in updater (routine); MainWP Upload .zip **initial seed only** — [docs/MAINWP_ROLLOUT.md](docs/MAINWP_ROLLOUT.md)
 - **wordpress.org:** wporg zip / SVN — external users only
 
 ## Secrets
@@ -57,7 +57,7 @@ Agency-only code: `includes/agency/bootstrap.php` and siblings. See [docs/MAINWP
 1. Edit `smart-purge-for-breeze-cache.php` and `includes/agency/` (agency features)
 2. Push to `main` → GitHub Actions deploys agency tree to staging
 3. Test on staging (WP-CLI + browser)
-4. Tag `v*` → agency zip for MainWP; wporg zip for SVN when public subset is ready
+4. Tag `v*` → agency zip on GitHub Releases (clients auto-offer update via updater); rebuild wporg zip for wordpress.org upload when ready — **no** MainWP zip re-rollout
 
 ## Site access
 
