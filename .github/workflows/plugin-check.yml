@@ -33,6 +33,10 @@ jobs:
         with:
           build-dir: './build/wporg/pixelparade-smart-purge-for-breeze-cache'
           exclude-directories: '.git,.github'
+          # Frontend Breeze toolbar mirrors Breeze's own admin-bar labels and must use
+          # Breeze's text domain so translations match. Not a plugin-owned string set.
+          ignore-codes: |
+            WordPress.WP.I18n.TextDomainMismatch
 
   build-zips:
     runs-on: ubuntu-latest
