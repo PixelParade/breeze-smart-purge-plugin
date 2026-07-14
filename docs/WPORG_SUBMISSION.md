@@ -72,7 +72,7 @@ wp plugin install plugin-check --activate
 wp plugin check smart-purge-for-breeze-cache --require=wp-content/plugins/plugin-check/cli.php
 ```
 
-CI builds a clean folder from `.distignore` then runs [wordpress/plugin-check-action](https://github.com/wordpress/plugin-check-action).
+CI builds a clean folder from `.distignore` then runs [wordpress/plugin-check-action](https://github.com/wordpress/plugin-check-action). `WordPress.WP.I18n.TextDomainMismatch` is ignored for intentional `breeze` domain on frontend toolbar mirror labels.
 
 ## SVN workflow (after approval)
 

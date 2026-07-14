@@ -96,6 +96,7 @@ Emergency hotfix: SCP to `public_html/wp-content/plugins/smart-purge-for-breeze-
 - Display name: **Smart Purge for Breeze Cache**; first directory release **1.0.0**; contributor **kevpress88**.
 - wporg zip excludes updater + `includes/agency/` (`.distignore.wporg`); see `docs/WPORG_SUBMISSION.md` and `docs/SECURITY.md`.
 - **Fold agency fixes into wporg:** `smart-purge-for-breeze-cache.php`, `assets/admin/settings.js`, `assets/admin/settings.css`, and `readme.txt` / `readme.wporg.txt` ship in the wporg zip — scan polling, DOMContentLoaded init, and progress transients are **not** agency-only. Rebuild `smart-purge-for-breeze-cache-wporg.zip` after merge; staging `deploy-staging.yml` chmod step does not apply to wp.org SVN.
+- **Plugin Check CI:** `ignore-codes` includes `WordPress.WP.I18n.TextDomainMismatch` — frontend Breeze toolbar mirrors use intentional `esc_html__(…, 'breeze')` for admin-bar label parity; plugin-owned strings stay on the ppspb_ / plugin text domain. Do not remove that ignore without replacing the mirror approach. Remaining annotations (nonce / `breeze_clear_all_cache` hook) are expected warning noise, not failures.
 - MainWP client policy: `docs/MAINWP_ROLLOUT.md`.
 
 ## Incident: staging admin UI broken after wp.org extract (Jul 2026)

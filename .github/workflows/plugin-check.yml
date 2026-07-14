@@ -33,8 +33,10 @@ jobs:
         with:
           build-dir: './build/wporg/pixelparade-smart-purge-for-breeze-cache'
           exclude-directories: '.git,.github'
-          # Frontend Breeze toolbar mirrors Breeze's own admin-bar labels and must use
-          # Breeze's text domain so translations match. Not a plugin-owned string set.
+          # Keep TextDomainMismatch ignored: frontend Breeze toolbar mirror labels use
+          # esc_html__(…, 'breeze') on purpose so translations match Breeze admin-bar.
+          # Plugin-owned strings use the plugin text domain. Removing this ignore fails CI
+          # (e.g. run 29298254730). Nonce / breeze_clear_all_cache warnings are expected noise.
           ignore-codes: |
             WordPress.WP.I18n.TextDomainMismatch
 
