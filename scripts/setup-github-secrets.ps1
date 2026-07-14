@@ -1,5 +1,5 @@
 # Set GitHub Actions secrets for PixelParade/breeze-smart-purge-plugin
-# Requires: gh auth with org access to PixelParade (fine-grained PAT, org authorized)
+# Requires: gh auth with org access to PixelParade (see wpcp-debug/docs/GITHUB_AUTH.md)
 $ErrorActionPreference = 'Stop'
 
 $repo = 'PixelParade/breeze-smart-purge-plugin'
