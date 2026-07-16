@@ -1,10 +1,10 @@
 # WordPress.org release notes — agency 1.1.16 → wporg zip
 
-Agency/MainWP is at **1.1.16** (`smart-purge-for-breeze-cache`). The **wordpress.org directory** remains at **1.0.0** until first public SVN tag. This doc lists what to fold from **1.1.15–1.1.16** into the next wporg upload after staging sign-off.
+Agency/MainWP may be at **1.1.16+** (`smart-purge-for-breeze-cache`). The **wordpress.org directory** first public tag is **1.0.0**. Plugin is **approved**; use [WPORG_SUBMISSION.md](WPORG_SUBMISSION.md) for the first SVN upload.
 
 ## What ships in the wporg zip (fold from agency)
 
-These paths are **not** agency-only — include them in `smart-purge-for-breeze-cache-wporg.zip`:
+These paths are **not** agency-only — included in `pixelparade-smart-purge-for-breeze-cache-wporg.zip`:
 
 | Area | Files | Notes |
 |------|-------|-------|
@@ -34,25 +34,24 @@ Outputs:
 | Artifact | Use |
 |----------|-----|
 | `smart-purge-for-breeze-cache.zip` | MainWP / GitHub Releases (agency) |
-| `smart-purge-for-breeze-cache-wporg.zip` | **Upload to wordpress.org** (pending slug; folder `smart-purge-for-breeze-cache`) |
-| `pixelparade-smart-purge-for-breeze-cache-wporg.zip` | After slug approval — SVN trunk |
+| `pixelparade-smart-purge-for-breeze-cache-wporg.zip` | **SVN trunk** (approved slug; version forced to **1.0.0**) |
+| `smart-purge-for-breeze-cache-wporg.zip` | Compatibility alias (same bytes as pixelparade zip) |
 
-Verify before upload:
+Verify before SVN:
 
 ```bash
-bash scripts/verify-plugin-zip.sh smart-purge-for-breeze-cache-wporg.zip
 bash scripts/verify-plugin-zip.sh pixelparade-smart-purge-for-breeze-cache-wporg.zip pixelparade-smart-purge-for-breeze-cache
 ```
 
 ## Slug and submission status
 
-- **Pending slug:** `pixelparade-smart-purge-for-breeze-cache` (see [WPORG_REVIEW_REPLY.md](WPORG_REVIEW_REPLY.md))
-- **Resubmit** `smart-purge-for-breeze-cache-wporg.zip` after staging sign-off (complete)
-- **No SVN** until directory approval — do not commit to `plugins.svn.wordpress.org` prematurely
+- **Approved slug:** `pixelparade-smart-purge-for-breeze-cache` (see [WPORG_REVIEW_REPLY.md](WPORG_REVIEW_REPLY.md))
+- **First SVN version:** **1.0.0** — checklist in [WPORG_SUBMISSION.md](WPORG_SUBMISSION.md)
+- Icons/banners: repo `assets/wporg/` → SVN `assets/` only (not trunk)
 
 ## Plugin Check (CI note)
 
-Latest `plugin-check.yml` on `main` may report `WordPress.WP.I18n.TextDomainMismatch` for strings that intentionally use Breeze's `breeze` text domain when mirroring Breeze admin bar labels. The wporg upload zip uses literal `'smart-purge-for-breeze-cache'` in plugin-owned strings; review any remaining Breeze-domain strings before resubmit.
+Latest `plugin-check.yml` on `main` may report `WordPress.WP.I18n.TextDomainMismatch` for strings that intentionally use Breeze's `breeze` text domain when mirroring Breeze admin bar labels. That ignore is intentional; plugin-owned strings use the pixelparade slug textdomain after transform.
 
 ## Related docs
 

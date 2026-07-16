@@ -2,9 +2,13 @@
 
 **Review ID:** R pixelparade-smart-purge-for-breeze-cache/kevpress88/3Jul26/T2 9Jul26/4.0.1
 
-Upload the corrected package: **`pixelparade-smart-purge-for-breeze-cache-wporg.zip`** (built via `scripts/build-plugin-zips.ps1` or `.sh`). Do **not** SVN until the team confirms approval.
+**Status:** **APPROVED** — slug `pixelparade-smart-purge-for-breeze-cache` (kevpress88).
 
-## Draft email reply
+Next step is the **first SVN upload** (not another zip upload to the review form). Follow the Windows checklist in [WPORG_SUBMISSION.md](WPORG_SUBMISSION.md).
+
+Zip for trunk: **`pixelparade-smart-purge-for-breeze-cache-wporg.zip`** (built via `scripts/build-plugin-zips.ps1`). Version inside: **1.0.0**.
+
+## Draft email reply (historical — used during review)
 
 > Hi,
 >
@@ -19,7 +23,7 @@ Upload the corrected package: **`pixelparade-smart-purge-for-breeze-cache-wporg.
 > Thanks,  
 > Kevin
 
-## Issues addressed in this build (for us — do not paste into the email)
+## Issues addressed in the approved build
 
 | Review item | Fix |
 |-------------|-----|
@@ -29,13 +33,12 @@ Upload the corrected package: **`pixelparade-smart-purge-for-breeze-cache-wporg.
 | `breeze_token_name` localize | Kept intentionally for Breeze JS compatibility (documented above) |
 | Agency updater / GitHub token | Excluded from wporg zip via `.distignore.wporg` |
 
-## Upload steps
+## After approval (current)
 
-1. Build: `powershell -ExecutionPolicy Bypass -File scripts/build-plugin-zips.ps1`  
-   (or `bash scripts/build-plugin-zips.sh`)
-2. Upload: **`pixelparade-smart-purge-for-breeze-cache-wporg.zip`**
-3. Reply with the email draft above (as **kevpress88**)
-4. Do **not** commit to SVN until approved
+1. Build: `powershell -ExecutionPolicy Bypass -File scripts/build-plugin-zips.ps1`
+2. Use: **`pixelparade-smart-purge-for-breeze-cache-wporg.zip`**
+3. Follow [WPORG_SUBMISSION.md](WPORG_SUBMISSION.md) — First SVN upload (Windows)
+4. Commit trunk → tag `1.0.0` → then SVN `assets/` icons
 
 ## Agency / MainWP lane
 

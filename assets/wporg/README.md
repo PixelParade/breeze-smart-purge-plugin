@@ -1,25 +1,24 @@
 # WordPress.org directory assets
 
-Upload these files to the **SVN `assets/` folder** (not inside `trunk/` or the plugin zip).
+Upload these files to the **SVN `assets/` folder** only (sibling of `trunk/` and `tags/`).
 
-The plugin zip also ships copies at `assets/icon-128x128.png` and `assets/icon-256x256.png` (WordPress standard path for Plugins and Updates screens).
+**Do not** put them in `trunk/`. **Do not** ship them inside the plugin zip — `.distignore.wporg` excludes `assets/icon-*.png` and this entire `assets/wporg/` folder.
 
 | File | Use |
 |------|-----|
 | `icon-128x128.png` | Plugin icon (required) |
 | `icon-256x256.png` | Plugin icon @2x |
-| `icon-512x512.png` | Plugin icon @4x (retina Updates / Favorites) |
 | `banner-772x250.png` | Plugin page banner |
-| `banner-1544x500.png` | Retina banner (optional) |
+| `banner-1544x500.png` | Retina banner (optional but prepared) |
 
 ## Visual style
 
 Derived from the official [Breeze Cache](https://wordpress.org/plugins/breeze/) wordpress.org artwork (cyan sky, wave landscape, breeze-line typography):
 
-- **Icon:** Breeze-style rounded square — blue gradient, browser + speedometer gauge (per official Breeze icon), orange refresh badge for purge add-on.
+- **Icon:** Breeze-style rounded square — blue gradient, browser + speedometer gauge, orange refresh badge for purge add-on.
 - **Banner:** Same layout as Breeze banner — **SMART PURGE** / *for Breeze Cache* with refresh motion graphic.
 
-**Dimensions must match filenames exactly** (WordPress squishes wrong aspect ratios in Updates / View details):
+**Dimensions must match filenames exactly** (WordPress squishes wrong aspect ratios):
 
 | File | Pixels |
 |------|--------|
@@ -32,16 +31,20 @@ Regenerate icons with `py scripts/build-padded-icons.py` (transparent canvas, ar
 
 This is an **unofficial add-on** — not Cloudways branding. Do not reuse Breeze assets verbatim on the directory page; use only the files in this folder.
 
-Reference URLs (local dev only, not committed):
+## SVN upload (after trunk + tags/1.0.0)
 
-- https://ps.w.org/breeze/assets/icon-128x128.gif
-- https://ps.w.org/breeze/assets/banner-772x250.jpg
+Full Windows steps: [docs/WPORG_SUBMISSION.md](../../docs/WPORG_SUBMISSION.md) § First SVN upload step 8.
 
-## SVN upload
+```text
+1. Copy these four PNGs into your SVN checkout's assets/ folder
+2. TortoiseSVN → Add → Commit
+```
+
+Or command line:
 
 ```bash
-svn co https://plugins.svn.wordpress.org/<your-slug>
-cp assets/wporg/*.png assets/   # into SVN checkout assets/
+cp assets/wporg/*.png /path/to/svn-checkout/assets/
+cd /path/to/svn-checkout
 svn add assets/*.png
-svn commit -m "Add plugin icons and banner."
+svn commit assets -m "Add plugin icons and banners."
 ```
