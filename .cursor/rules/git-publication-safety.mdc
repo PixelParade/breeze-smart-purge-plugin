@@ -1,0 +1,58 @@
+---
+description: Commit/push and Auto-review gates — when agents may publish to main vs leave work local
+alwaysApply: true
+---
+
+# Git publication safety — Smart Purge for Breeze Cache
+
+Mirrors wpcp-debug / user-global Auto-review policy for **this repo**. Pushing to `main` is a shared-state write (staging CI deploy). Do not treat “docs ready” or “SVN prep done” as authorization to publish.
+
+## Two kinds of Auto-review blocks (do not conflate)
+
+| Kind | Meaning | Agent response |
+|------|---------|----------------|
+| **Classifier** (command shape) | Unsafe or opaque shell/MCP form | Owned by `~/.cursor/rules/auto-review-autocorrect.mdc` + `.cursor/rules/auto-review-retry.mdc`: **rewrite + retry immediately**; max 2 `requestSmartModeApproval` on the same safer command. Never dump the warning on the user. |
+| **Policy gate** (publication / unnamed prod) | User did not authorize commit/push/`v*` or named production mutate | **Stop.** Do **not** retry with `requestSmartModeApproval` to force-publish to `main`. |
+
+Classifier examples for this repo: prefer Novamira/Cloudways MCP over shell `mcp.json` reads; `curl.exe -s -m 30`; split auth from mutate. Full table: `auto-review-retry.mdc`.
+
+## Policy gate: git commit / push / tag
+
+Treat these as policy gates (same class as unnamed production mutation). **Do not** force-approve or `requestSmartModeApproval`-retry commit/push when Auto-review (or this rule) says the user did not authorize publication (e.g. “unauthorized push to main”).
+
+| User asked for… | Agent may… | Agent must **not**… |
+|-----------------|------------|---------------------|
+| Prepare / update docs, SVN upload instructions, checklists | Edit local files; leave uncommitted; tell user paths are ready | `git commit`, `git push`, tag `v*`, or open a “publish docs” PR unless they also said commit/push |
+| Fix code / agency feature work **without** saying commit | Edit locally; report what changed | Commit or push on its own |
+| Explicit **commit** (and/or **push**) | Commit (and push only if push was requested) | Push when only commit was asked |
+| Agency **version bump / release** | Follow **Mandatory agency release gate** in `ops-lessons.mdc` (smoke staging + pixelparade.co **before** the bump commit/push/`v*` tag) | Skip smokes; tag before both smokes pass |
+
+**Default:** only create commits when the user explicitly asks. Only push when the user explicitly asks. Aligns with the user rule *committing-changes-with-git*.
+
+## Docs-only / wordpress.org SVN prep (common trap)
+
+Preparing `docs/WPORG_SUBMISSION.md`, review replies, or local zips for **wordpress.org SVN** is **not** the same as publishing the GitHub repo:
+
+- Finish the checklist **locally**.
+- SVN upload is a **separate** human/Tortoise step (see `docs/WPORG_SUBMISSION.md`) — it does not require pushing these docs to `main` first.
+- If Auto-review says commit/push to `main` is unauthorized for a local doc / SVN-prep request — **stop**. Leave docs local or ask: “Commit and push these doc updates?”
+
+## Agency gate vs docs gate (do not conflate)
+
+- **Agency plugin bump:** smokes are required **before** commit/push/`v*` — that gate answers *when* a requested release may publish, not *whether* the user asked to publish.
+- **Docs / SVN prep:** no auto-push; smokes are irrelevant unless the change also ships agency PHP/assets that need a release.
+
+## Auto-review examples for this repo
+
+| Block reason (paraphrase) | Kind | Correct response |
+|---------------------------|------|------------------|
+| Commit/push docs is shared-state write; unauthorized push to `main`; user only asked to prepare SVN instructions | **Policy** | Leave docs local; do not commit/push; do **not** `requestSmartModeApproval` to force publish; point user at the checklist path |
+| “run cfg converter” / mcp.json + mutate | **Classifier** | Prefer Novamira/Cloudways MCP or `.env.deploy.local`; split auth from mutate; rewrite + retry safer shape immediately |
+| Unnamed production / MainWP mutation | **Policy** | State hostname + IDs; wait for explicit yes — do not force-approve |
+
+## Safe without commit/push ask
+
+- Local edits to docs, rules, scripts, PHP
+- Staging verification (per auto-approve staging rule)
+- Building zips locally (`scripts/build-plugin-zips.ps1`)
+- Reporting that files are ready for the user to commit when they want

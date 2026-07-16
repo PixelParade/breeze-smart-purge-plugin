@@ -1,6 +1,6 @@
 # WordPress.org release notes — agency 1.1.16 → wporg zip
 
-Agency/MainWP may be at **1.1.16+** (`smart-purge-for-breeze-cache`). The **wordpress.org directory** first public tag is **1.0.0**. Plugin is **approved**; use [WPORG_SUBMISSION.md](WPORG_SUBMISSION.md) for the first SVN upload.
+Agency/MainWP may be at **1.1.16+** (`smart-purge-for-breeze-cache`). The **wordpress.org directory** first public tag is **1.0.0** — **already on SVN** (Jul 2026). This doc records what was folded into that first public package. Later directory bumps: rebuild wporg zip → SVN trunk + new tag (see [WPORG_SUBMISSION.md](WPORG_SUBMISSION.md)).
 
 ## What ships in the wporg zip (fold from agency)
 

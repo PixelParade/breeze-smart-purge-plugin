@@ -13,9 +13,23 @@ alwaysApply: true
 - **MainWP clients:** agency build only — never wordpress.org install for this plugin. Optional `BSP_GITHUB_TOKEN` / `PPSPB_GITHUB_TOKEN` for rate limits.
 - **After initial fleet:** do **not** MainWP Upload .zip / bulk zip install for agency updates — seed once with a zip that includes the updater, then only tag `v*` + GitHub Release; clients update via Plugins → Update.
 
+## Auto-review: agent rewrite + retry (not the user's job)
+
+When Auto-review **blocks, warns, or fails classifying** a shell/MCP action, **the agent** must fix it — never dump Auto-review text on the user or ask “should I be concerned?”
+
+| Kind of block | Agent must… | Agent must **not**… |
+|---------------|-------------|---------------------|
+| **Classifier** (command shape: cfg converter, secrets+mutate, opaque multi-step shell, PowerShell `curl` hang risk) | Rewrite into a safer form and **retry right away**. Prefer Novamira/Cloudways MCP over shell `mcp.json` reads; use `curl.exe -s -m 30`. Max **2** `requestSmartModeApproval` on the *same already-safe* retry. | Leave the warning for the user to interpret; ask whether to proceed without rewriting |
+| **Policy gate** (commit/push/`v*` without explicit ask; unauthorized push to `main`; unnamed production/MainWP mutate) | **Stop**. Leave work local or ask once for explicit publish/target confirmation. See `git-publication-safety.mdc`. | Retry with `requestSmartModeApproval` to force-publish or bypass the gate |
+
+- **User-global:** `~/.cursor/rules/auto-review-autocorrect.mdc`
+- **This repo (alwaysApply):** `.cursor/rules/auto-review-retry.mdc` — Smart Purge examples + classifier vs policy split
+- **Publication gates:** `.cursor/rules/git-publication-safety.mdc` — `git commit` / `git push` / `v*` only when the user **explicitly** asks. Docs-only / wordpress.org **SVN prep** → leave files local; do **not** auto-push to `main` (staging CI).
+- **Agency release gate below** answers *when* a requested agency bump may publish (after smokes). It does **not** authorize commit/push for unrelated doc/SVN work.
+
 ## Mandatory agency release gate (do not skip)
 
-Before **commit + push** of an agency plugin bump, and before **tag `v*` / GitHub Release** (clients auto-update via the GitHub updater):
+Before **commit + push** of an agency plugin bump, and before **tag `v*` / GitHub Release** (clients auto-update via the GitHub updater) — and **only if the user asked to commit/push/release**:
 
 1. **Smoke staging** (`breeze-smart-purge.pixelparade.dev`) — must pass.
 2. **Smoke pixelparade.co** (MainWP site ID **16**) — must pass.
@@ -93,11 +107,23 @@ Emergency hotfix: SCP to `public_html/wp-content/plugins/smart-purge-for-breeze-
 
 ## wordpress.org
 
-- Display name: **Smart Purge for Breeze Cache**; first directory release **1.0.0**; contributor **kevpress88**.
-- wporg zip excludes updater + `includes/agency/` (`.distignore.wporg`); see `docs/WPORG_SUBMISSION.md` and `docs/SECURITY.md`.
-- **Fold agency fixes into wporg:** `smart-purge-for-breeze-cache.php`, `assets/admin/settings.js`, `assets/admin/settings.css`, and `readme.txt` / `readme.wporg.txt` ship in the wporg zip — scan polling, DOMContentLoaded init, and progress transients are **not** agency-only. Rebuild `smart-purge-for-breeze-cache-wporg.zip` after merge; staging `deploy-staging.yml` chmod step does not apply to wp.org SVN.
-- **Plugin Check CI:** `ignore-codes` includes `WordPress.WP.I18n.TextDomainMismatch` — frontend Breeze toolbar mirrors use intentional `esc_html__(…, 'breeze')` for admin-bar label parity; plugin-owned strings stay on the ppspb_ / plugin text domain. Do not remove that ignore without replacing the mirror approach. Remaining annotations (nonce / `breeze_clear_all_cache` hook) are expected warning noise, not failures.
-- MainWP client policy: `docs/MAINWP_ROLLOUT.md`.
+- **Approved (Jul 2026):** slug `pixelparade-smart-purge-for-breeze-cache`; contributor **kevpress88**; public https://wordpress.org/plugins/pixelparade-smart-purge-for-breeze-cache
+- Display name on directory: **PixelParade Smart Purge for Breeze Cache**; first SVN tag **1.0.0** (agency may stay at **1.1.x** on GitHub).
+- wporg zip excludes updater + `includes/agency/` + directory icons (`.distignore.wporg`); see `docs/WPORG_SUBMISSION.md`.
+- **Fold agency fixes into wporg:** shared PHP/JS/CSS ship in the wporg zip — not agency-only. Rebuild `pixelparade-smart-purge-for-breeze-cache-wporg.zip` then SVN trunk + `tags/X.Y.Z`. Staging CI chmod does not apply to wp.org.
+- **Plugin Check CI:** keep `WordPress.WP.I18n.TextDomainMismatch` ignored for intentional `breeze` toolbar mirrors. Do not remove without replacing that approach.
+- **Prefix:** public API is `ppspb_` / `PPSPB_*` (review rejected 3-char `bsp_`). Keep `breeze_token_name` localize for Breeze JS — reply note if ever re-flagged.
+- MainWP client policy: `docs/MAINWP_ROLLOUT.md` — never install the wordpress.org slug on agency sites.
+
+## Lessons: first wordpress.org SVN (Jul 2026)
+
+- **SVN ≠ GitHub.** Approving/uploading to wordpress.org does **not** require pushing docs to `main` first. Conversely, committing Cursor helpers to GitHub does **not** update the directory.
+- **First public package already folded agency features** into **1.0.0** (scan UI, live log, utility CPT toggles, `ppspb_`). Do not assume you need an immediate second SVN tag after approval unless there is a new public change.
+- **Agency 1.1.x vs directory 1.0.0** is intentional version split — do not MainWP-install the `.org` plugin on clients.
+- **SVN from Cursor works:** portable `svn` + `scripts/wporg-svn-first-upload.ps1` (or `.svn-wporg/` working copy). Username `kevpress88` + **SVN password** (profile Account & Security — not the website password). Never commit `.svn-wporg/` or `tools/svn/` (gitignored).
+- **Layout:** plugin files at `trunk/` root (no nested slug folder); icons/banners only in SVN top-level `assets/` (from repo `assets/wporg/`), never inside the plugin zip or trunk.
+- **Review replies:** stay concise — uploaded build + clarifications only; do not paste a full changelog.
+- **After approval:** whitelist `plugins@wordpress.org`; future issues are community/automated flags, not full re-reviews.
 
 ## Incident: staging admin UI broken after wp.org extract (Jul 2026)
 
@@ -155,4 +181,4 @@ Full checklist: `docs/MAINWP_ROLLOUT.md` § Fleet rollout safety.
 
 ## When to update this file
 
-After deploy incidents or auth changes — one bullet here. Cloudways MCP/API detail: `wpcp-debug/docs/CLOUDWAYS-MCP.md`. GitHub auth: `wpcp-debug/docs/GITHUB_AUTH.md`. Paths: `docs/ACCESS.md`.
+After deploy incidents or auth changes — one bullet here. Cloudways MCP/API detail: `wpcp-debug/docs/CLOUDWAYS-MCP.md`. GitHub auth: `wpcp-debug/docs/GITHUB_AUTH.md`. Paths: `docs/ACCESS.md`. Auto-review rewrite+retry: `auto-review-retry.mdc`; commit/push policy gates: `git-publication-safety.mdc` (do not duplicate long tables here).

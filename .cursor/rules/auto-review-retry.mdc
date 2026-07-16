@@ -1,0 +1,36 @@
+---
+description: Auto-review blocks — agent rewrites and retries; policy gates stop without force-approve
+alwaysApply: true
+---
+
+# Auto-review retry — Smart Purge for Breeze Cache
+
+Mirrors user-global `~/.cursor/rules/auto-review-autocorrect.mdc` for **this repo**. When Auto-review flags a command, **the agent** rewrites it into a safer form and retries immediately — do **not** leave the user to interpret the warning or ask “should I be concerned?”
+
+## Classifier block → rewrite + retry
+
+1. **Immediately self-correct** — split steps, drop secret persistence/printing, avoid credential-file reads combined with mutations, one inspectable call per shell.
+2. **Retry the safer variant right away.**
+3. At most **2** `requestSmartModeApproval` retries for the *same already-safe* command; then explain and ask the user.
+4. Never write OAuth/bearer tokens or API keys to disk as a workaround; never print secrets.
+
+### Smart Purge examples (prefer these shapes)
+
+| Blocked / risky shape | Safer retry |
+|-----------------------|-------------|
+| Shell `Get-Content` / `ConvertFrom-Json` on `~/.cursor/mcp.json` or project `.cursor/mcp.json` (*run cfg converter*) | Use **Novamira** (`novamira-breeze-smart-pur`) or **Cloudways** (`user-cloudways`) MCP tools; staging auth from `.env.deploy.local` without printing values |
+| PowerShell `curl` (alias → `Invoke-WebRequest`, can hang) | `curl.exe -s -m 30 …` |
+| Opaque multi-step shell + delete/write | One clear, inspectable command; target hostname/IDs in the command text |
+| Staging check via shell when MCP covers it | Novamira `run-wp-cli` / `read-file`; Cloudways `app_purge_cache` on server `1305358` / app `6528457` |
+
+## Policy gate → stop (do not force-approve)
+
+Same class as unnamed production mutation. **Do not** use `requestSmartModeApproval` to push past these:
+
+| Gate | Correct response |
+|------|------------------|
+| Commit / push / tag `v*` without explicit user ask | Leave local; ask “Commit and push?” if needed — see `git-publication-safety.mdc` |
+| Auto-review: unauthorized push to `main` / shared-state write for docs or SVN prep | **Stop.** Do not retry approval to force-publish |
+| Production / MainWP mutate when user did not name that exact site | State hostname + IDs; wait for explicit yes |
+
+Detail and tables: `.cursor/rules/git-publication-safety.mdc`. Ops cross-link: `.cursor/rules/ops-lessons.mdc` § Auto-review.

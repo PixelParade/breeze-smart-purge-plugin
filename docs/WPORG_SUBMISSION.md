@@ -2,9 +2,11 @@
 
 Use this for the **public** [wordpress.org plugin directory](https://wordpress.org/plugins/) lane. PixelParade client sites on GitHub Releases + MainWP keep using `includes/github-updater.php` and `PPSPB_GITHUB_TOKEN` / `BSP_GITHUB_TOKEN`.
 
-**Status (Jul 2026):** Plugin **approved** — slug `pixelparade-smart-purge-for-breeze-cache` (contributor `kevpress88`). Public page appears after the first successful SVN commit + tag.
+**Status (Jul 2026):** Plugin **approved** and **live** — slug `pixelparade-smart-purge-for-breeze-cache` (contributor `kevpress88`). First SVN upload completed from Cursor (trunk **1.0.0**, tag `tags/1.0.0`, icons/banners in SVN `assets/`). Public: https://wordpress.org/plugins/pixelparade-smart-purge-for-breeze-cache
 
-**Ready for you (local):** Follow **First SVN upload** below. You do **not** need to push these docs to GitHub `main` before TortoiseSVN — wordpress.org SVN is separate from this repo. Ask the agent to commit/push these doc updates only if you want them on GitHub.
+**Future releases:** rebuild wporg zip → update SVN `trunk` → tag `tags/X.Y.Z` → bump `Stable tag:`. Agency/MainWP stays on GitHub Releases (separate version line). See ops lessons: first SVN upload (Jul 2026).
+
+**GitHub vs SVN:** Doc/helper commits to this git repo do **not** change the directory. SVN commits do **not** require a prior `git push`.
 
 | Item | Value |
 |------|--------|
